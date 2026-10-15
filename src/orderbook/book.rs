@@ -25,7 +25,20 @@ impl OrderBook {
 }
 
 impl OrderBook {
-    pub fn add_order(&self) {
-        todo!()
+    pub fn add_order(&mut self, order: &Order) {
+        let price = order.price.expect("limit order must have price");
+        let book = match order.side {
+            Side::Bid => &mut self.bids,
+            Side::Ask => &mut self.asks,
+        };
+
+        book.entry(price)
+            .or_default()
+            .orders
+            .push_back(order.clone());
+
+        self.order_index
+            .insert(order.id, (order.side.clone(), price));
+        self.sequence += 1;
     }
 }
