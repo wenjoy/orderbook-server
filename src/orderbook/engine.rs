@@ -31,8 +31,8 @@ impl MatchingEngine {
         let mut new_trades: Vec<Trade> = Vec::new();
 
         match order.side {
-            Side::Ask => self.match_ask(),
-            Side::Bid => self.match_bid(),
+            Side::Ask => self.match_ask(&mut order, &mut new_trades),
+            Side::Bid => self.match_bid(&mut order, &mut new_trades),
         }
 
         if order.remaining() > 0 && matches!(order.order_type, OrderType::Limit) {
@@ -41,7 +41,7 @@ impl MatchingEngine {
             } else {
                 OrderStatus::Open
             };
-            self.book.add_order();
+            self.book.add_order(&order);
         } else if order.remaining() == 0 {
             order.status = OrderStatus::Filled;
         } else {
@@ -52,10 +52,44 @@ impl MatchingEngine {
         Ok((order, new_trades))
     }
 
-    fn match_ask(&self) {
+    fn match_ask(&self, taker: &mut Order, trades: &mut Vec<Trade>) {
         todo!()
     }
-    fn match_bid(&self) {
-        todo!()
+    fn match_bid(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
+        while taker.remaining() > 0 {
+            let Some(best_ask_price) = self.book.best_ask() else {
+                break;
+            };
+
+            if let Some(limit_price) = taker.price
+                && limit_price < best_ask_price
+            {
+                break;
+            }
+
+            let price_level = self
+                .book
+                .asks
+                .get_mut(&best_ask_price)
+                .expect("not a valid price");
+
+            for maker in price_level.orders.iter_mut() {
+                let traded = maker.quantity.min(taker.quantity);
+
+                taker.quantity -= traded;
+                maker.quantity -= traded;
+                maker.filled_quantity += traded;
+
+                if taker.quantity == 0 {
+                    break;
+                }
+            }
+
+            if price_level.orders.iter().all(|o| o.quantity == 0) {
+                self.book.asks.remove(&best_ask_price);
+            } else {
+                price_level.orders.retain(|o| o.quantity > 0);
+            }
+        }
     }
 }

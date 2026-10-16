@@ -26,7 +26,7 @@ pub struct Order {
 
 impl Order {
     pub fn remaining(&self) -> u64 {
-        todo!()
+        self.quantity.saturating_sub(self.filled_quantity)
     }
 }
 
