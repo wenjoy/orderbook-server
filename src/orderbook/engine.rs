@@ -72,7 +72,11 @@ impl MatchingEngine {
                 .expect("not a valid bid price");
 
             for maker in price_level.orders.iter_mut() {
-                let traded = maker.quantity.min(taker.quantity);
+                let traded = maker.remaining().min(taker.remaining());
+
+                if traded == 0 {
+                    continue;
+                }
 
                 trades.push(Trade {
                     maker_order_id: maker.id,
@@ -83,10 +87,18 @@ impl MatchingEngine {
                     id: Uuid::new_v4(),
                     timestamp: chrono::Utc::now(),
                 });
-                taker.quantity -= traded;
-                maker.quantity -= traded;
-                // maker.filled_quantity += traded;
-                if taker.quantity == 0 {
+                taker.filled_quantity += traded;
+                maker.filled_quantity += traded;
+
+                if maker.remaining() == 0 {
+                    maker.status = OrderStatus::Filled;
+                    // fully_filled_ids.push(maker.id);
+                } else {
+                    maker.status = OrderStatus::PartiallyFilled;
+                }
+
+                if taker.remaining() == 0 {
+                    taker.status = OrderStatus::Filled;
                     break;
                 }
             }
@@ -96,6 +108,10 @@ impl MatchingEngine {
             } else {
                 price_level.orders.retain(|o| o.quantity > 0);
             }
+        }
+
+        if taker.filled_quantity > 0 && taker.remaining() > 0 {
+            taker.status = OrderStatus::PartiallyFilled;
         }
     }
     fn match_bid(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
@@ -128,11 +144,10 @@ impl MatchingEngine {
                     id: Uuid::new_v4(),
                     timestamp: chrono::Utc::now(),
                 });
-                taker.quantity -= traded;
-                maker.quantity -= traded;
-                // maker.filled_quantity += traded;
+                taker.filled_quantity += traded;
+                maker.filled_quantity += traded;
 
-                if taker.quantity == 0 {
+                if taker.remaining() == 0 {
                     break;
                 }
             }
