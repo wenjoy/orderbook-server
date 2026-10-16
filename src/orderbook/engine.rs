@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::{
     error::{EngineError, Result},
     orderbook::book::OrderBook,
@@ -52,8 +54,49 @@ impl MatchingEngine {
         Ok((order, new_trades))
     }
 
-    fn match_ask(&self, taker: &mut Order, trades: &mut Vec<Trade>) {
-        todo!()
+    fn match_ask(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
+        while taker.remaining() > 0 {
+            let Some(best_bid_price) = self.book.best_bid() else {
+                break;
+            };
+            if let Some(limit_price) = taker.price
+                && limit_price > best_bid_price
+            {
+                break;
+            }
+
+            let price_level = self
+                .book
+                .bids
+                .get_mut(&best_bid_price)
+                .expect("not a valid bid price");
+
+            for maker in price_level.orders.iter_mut() {
+                let traded = maker.quantity.min(taker.quantity);
+
+                trades.push(Trade {
+                    maker_order_id: maker.id,
+                    taker_order_id: taker.id,
+                    price: best_bid_price,
+                    side: Side::Ask,
+                    quantity: traded,
+                    id: Uuid::new_v4(),
+                    timestamp: chrono::Utc::now(),
+                });
+                taker.quantity -= traded;
+                maker.quantity -= traded;
+                // maker.filled_quantity += traded;
+                if taker.quantity == 0 {
+                    break;
+                }
+            }
+
+            if price_level.orders.iter().all(|o| o.quantity == 0) {
+                self.book.bids.remove(&best_bid_price);
+            } else {
+                price_level.orders.retain(|o| o.quantity > 0);
+            }
+        }
     }
     fn match_bid(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
         while taker.remaining() > 0 {
@@ -76,9 +119,18 @@ impl MatchingEngine {
             for maker in price_level.orders.iter_mut() {
                 let traded = maker.quantity.min(taker.quantity);
 
+                trades.push(Trade {
+                    maker_order_id: maker.id,
+                    taker_order_id: taker.id,
+                    price: best_ask_price,
+                    side: Side::Bid,
+                    quantity: traded,
+                    id: Uuid::new_v4(),
+                    timestamp: chrono::Utc::now(),
+                });
                 taker.quantity -= traded;
                 maker.quantity -= traded;
-                maker.filled_quantity += traded;
+                // maker.filled_quantity += traded;
 
                 if taker.quantity == 0 {
                     break;
