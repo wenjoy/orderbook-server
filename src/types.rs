@@ -49,3 +49,14 @@ pub struct Trade {
     pub timestamp: DateTime<Utc>,
     pub side: Side, // taker 的方向
 }
+
+pub struct DepthLevel {
+    pub price: u64,
+    pub quantity: u64,
+}
+
+pub struct OrderBookSnapshot {
+    pub bids: Vec<DepthLevel>,
+    pub asks: Vec<DepthLevel>,
+    pub sequence: u64,
+}

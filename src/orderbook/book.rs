@@ -2,11 +2,16 @@ use std::collections::{BTreeMap, VecDeque};
 
 use uuid::Uuid;
 
-use crate::types::{Order, Side};
+use crate::types::{DepthLevel, Order, OrderBookSnapshot, Side};
 
 #[derive(Clone, Default)]
 pub struct PriceLevel {
     pub orders: VecDeque<Order>,
+}
+impl PriceLevel {
+    pub fn total_quantity(&self) -> u64 {
+        self.orders.iter().map(|o| o.remaining()).sum()
+    }
 }
 #[derive(Clone, Default)]
 pub struct OrderBook {
@@ -40,5 +45,34 @@ impl OrderBook {
         self.order_index
             .insert(order.id, (order.side.clone(), price));
         self.sequence += 1;
+    }
+
+    pub fn snapshot(&self, depth: usize) -> OrderBookSnapshot {
+        let bids = self
+            .bids
+            .iter()
+            .rev()
+            .take(depth)
+            .map(|(&price, level)| DepthLevel {
+                price,
+                quantity: level.total_quantity(),
+            })
+            .collect();
+
+        let asks = self
+            .asks
+            .iter()
+            .take(depth)
+            .map(|(&price, level)| DepthLevel {
+                price,
+                quantity: level.total_quantity(),
+            })
+            .collect();
+
+        OrderBookSnapshot {
+            bids,
+            asks,
+            sequence: self.sequence,
+        }
     }
 }

@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     error::{EngineError, Result},
     orderbook::book::OrderBook,
-    types::{Order, OrderStatus, OrderType, Side, Trade},
+    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side, Trade},
 };
 
 #[derive(Clone, Default)]
@@ -158,5 +158,9 @@ impl MatchingEngine {
                 price_level.orders.retain(|o| o.quantity > 0);
             }
         }
+    }
+
+    pub fn get_snapshot(&self, depth: usize) -> OrderBookSnapshot {
+        self.book.snapshot(depth)
     }
 }

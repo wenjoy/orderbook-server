@@ -46,4 +46,8 @@ fn test_simple_full_fill() {
     assert_eq!(trades[0].quantity, 10);
     assert_eq!(buy_order.status, OrderStatus::Filled);
     assert_eq!(buy_order.filled_quantity, 10);
+
+    let snap = engine.get_snapshot(10);
+    assert!(snap.bids.is_empty());
+    assert!(snap.bids.is_empty());
 }
