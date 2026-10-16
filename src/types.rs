@@ -30,7 +30,7 @@ impl Order {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum OrderStatus {
     Open,
     PartiallyFilled,

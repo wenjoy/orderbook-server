@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum EngineError {
     OrderNotFound(uuid::Uuid),
     InvalidOrder(String),
