@@ -1,5 +1,5 @@
 use chrono::Utc;
-use orderbook_engine::orderbook::MatchingEngine;
+use orderbook_engine::orderbook::{MatchingEngine, engine};
 use orderbook_engine::types::*;
 use uuid::Uuid;
 
@@ -50,4 +50,24 @@ fn test_simple_full_fill() {
     let snap = engine.get_snapshot(10);
     assert!(snap.bids.is_empty());
     assert!(snap.bids.is_empty());
+}
+
+#[test]
+fn test_partial_fill() {
+    let mut engine = MatchingEngine::new();
+
+    let sell = make_limit_order(Side::Ask, 100, 10);
+    engine.place_order(sell).unwrap();
+    let buy = make_limit_order(Side::Bid, 100, 6);
+    let (buy_order, trades) = engine.place_order(buy).unwrap();
+
+    assert_eq!(trades[0].price, 100);
+    assert_eq!(trades[0].quantity, 6);
+    assert_eq!(buy_order.filled_quantity, 6);
+    assert_eq!(buy_order.status, OrderStatus::Filled);
+
+    let snap = engine.get_snapshot(2);
+    assert_eq!(snap.asks.len(), 1);
+    assert_eq!(snap.asks[0].quantity, 4);
+    assert_eq!(snap.bids.len(), 0);
 }
