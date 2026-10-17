@@ -3,7 +3,8 @@ use uuid::Uuid;
 
 use crate::{
     api::state::SharedEngine,
-    types::{Order, OrderStatus, OrderType, Side},
+    orderbook::{book::OrderBook, engine},
+    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
 };
 
 pub struct PlaceOrderRequst {
@@ -33,4 +34,33 @@ pub async fn place_order(
         Ok((order, _)) => Ok(Json(order)),
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
+}
+pub struct CancelOrdedrRequest {
+    pub order_id: Uuid,
+}
+pub async fn cancel_order(
+    State(engine): State<SharedEngine>,
+    Json(req): Json<CancelOrdedrRequest>,
+) -> Result<Json<Order>, StatusCode> {
+    let order_id = req.order_id;
+    let mut engine = engine.write().await;
+
+    match engine.cancel_order(order_id) {
+        Ok(order) => Ok(Json(order)),
+        Err(_) => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+pub async fn get_orderbook(
+    State(engine): State<SharedEngine>,
+) -> Result<Json<OrderBookSnapshot>, StatusCode> {
+    let engine = engine.write().await;
+
+    let snap = engine.get_snapshot(10);
+
+    Ok(Json(snap))
+}
+
+pub async fn ws_handler() {
+    todo!()
 }
