@@ -141,3 +141,20 @@ fn test_market_order_insufficient_liquidity() {
     assert_eq!(buy_order.status, OrderStatus::PartiallyFilled);
     assert_eq!(buy_order.filled_quantity, 5);
 }
+#[test]
+fn test_price_time_priority() {
+    let mut engine = MatchingEngine::new();
+
+    let sell1 = make_limit_order(Side::Ask, 100, 5);
+    let sell_id = sell1.id;
+    engine.place_order(sell1).unwrap();
+
+    let sell2 = make_limit_order(Side::Ask, 100, 5);
+    engine.place_order(sell2).unwrap();
+
+    let buy = make_limit_order(Side::Bid, 100, 5);
+    let (_, trades) = engine.place_order(buy).unwrap();
+
+    assert_eq!(trades.len(), 1);
+    assert_eq!(trades[0].maker_order_id, sell_id);
+}
