@@ -166,4 +166,18 @@ impl MatchingEngine {
     pub fn get_snapshot(&self, depth: usize) -> OrderBookSnapshot {
         self.book.snapshot(depth)
     }
+
+    pub fn cancel_order(&mut self, order_id: Uuid) -> Result<Order> {
+        let mut order = self
+            .book
+            .remove_order(order_id)
+            .ok_or(EngineError::OrderNotFound(order_id))?;
+
+        if !order.is_active() {
+            return Err(EngineError::OrderAlreadyClosed);
+        }
+
+        order.status = OrderStatus::Cancelled;
+        Ok(order)
+    }
 }

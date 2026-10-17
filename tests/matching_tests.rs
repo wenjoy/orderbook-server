@@ -1,5 +1,6 @@
 use chrono::Utc;
 use orderbook_engine::orderbook::{MatchingEngine, engine};
+use orderbook_engine::types::OrderStatus::Cancelled;
 use orderbook_engine::types::Side::Ask;
 use orderbook_engine::types::*;
 use uuid::Uuid;
@@ -105,4 +106,21 @@ fn test_multi_level_match() {
     let snap = engine.get_snapshot(1);
     assert_eq!(snap.asks[0].price, 102);
     assert_eq!(snap.asks[0].quantity, 8);
+}
+
+#[test]
+fn test_cancel_order() {
+    let mut engine = MatchingEngine::new();
+
+    let order = make_limit_order(Side::Bid, 100, 10);
+    let order_id = order.id;
+    engine.place_order(order).unwrap();
+
+    let cancelled = engine.cancel_order(order_id).unwrap();
+    assert_eq!(cancelled.status, OrderStatus::Cancelled);
+
+    let snap = engine.get_snapshot(2);
+    assert!(snap.bids.is_empty());
+
+    assert!(engine.cancel_order(order_id).is_err());
 }

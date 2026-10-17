@@ -51,7 +51,7 @@ impl OrderBook {
     }
 
     pub fn remove_order(&mut self, order_id: Uuid) -> Option<Order> {
-        let (side, price) = self.order_index.remove(&order_id).unwrap();
+        let (side, price) = self.order_index.remove(&order_id)?;
 
         let book = match side {
             Side::Ask => &mut self.asks,
@@ -62,8 +62,8 @@ impl OrderBook {
             let pos = level.orders.iter().position(|o| o.id == order_id).unwrap();
             let order = level.orders.remove(pos).unwrap();
 
-            if level.is_empty() {
-                level.orders.remove(price as usize);
+            if level.orders.is_empty() {
+                book.remove(&price);
             }
 
             self.sequence += 1;

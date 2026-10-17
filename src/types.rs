@@ -28,6 +28,12 @@ impl Order {
     pub fn remaining(&self) -> u64 {
         self.quantity.saturating_sub(self.filled_quantity)
     }
+    pub fn is_active(&self) -> bool {
+        matches!(
+            self.status,
+            OrderStatus::Open | OrderStatus::PartiallyFilled
+        )
+    }
 }
 
 #[derive(Clone, PartialEq, Debug)]
