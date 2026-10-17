@@ -12,6 +12,9 @@ impl PriceLevel {
     pub fn total_quantity(&self) -> u64 {
         self.orders.iter().map(|o| o.remaining()).sum()
     }
+    pub fn is_empty(&self) -> bool {
+        self.orders.iter().all(|o| o.remaining() == 0)
+    }
 }
 #[derive(Clone, Default)]
 pub struct OrderBook {
@@ -45,6 +48,28 @@ impl OrderBook {
         self.order_index
             .insert(order.id, (order.side.clone(), price));
         self.sequence += 1;
+    }
+
+    pub fn remove_order(&mut self, order_id: Uuid) -> Option<Order> {
+        let (side, price) = self.order_index.remove(&order_id).unwrap();
+
+        let book = match side {
+            Side::Ask => &mut self.asks,
+            Side::Bid => &mut self.bids,
+        };
+
+        if let Some(level) = book.get_mut(&price) {
+            let pos = level.orders.iter().position(|o| o.id == order_id).unwrap();
+            let order = level.orders.remove(pos).unwrap();
+
+            if level.is_empty() {
+                level.orders.remove(price as usize);
+            }
+
+            self.sequence += 1;
+            return Some(order);
+        }
+        None
     }
 
     pub fn snapshot(&self, depth: usize) -> OrderBookSnapshot {
