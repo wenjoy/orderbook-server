@@ -1,18 +1,18 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Side {
     Bid,
     Ask,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum OrderType {
     Limit,
     Market,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Order {
     pub id: Uuid,
     pub side: Side,

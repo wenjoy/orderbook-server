@@ -1,5 +1,6 @@
 use chrono::Utc;
 use orderbook_engine::orderbook::{MatchingEngine, engine};
+use orderbook_engine::types::Side::Ask;
 use orderbook_engine::types::*;
 use uuid::Uuid;
 
@@ -70,4 +71,38 @@ fn test_partial_fill() {
     assert_eq!(snap.asks.len(), 1);
     assert_eq!(snap.asks[0].quantity, 4);
     assert_eq!(snap.bids.len(), 0);
+}
+
+#[test]
+fn test_multi_level_match() {
+    let mut engine = MatchingEngine::new();
+
+    engine
+        .place_order(make_limit_order(Side::Ask, 100, 10))
+        .unwrap();
+    engine
+        .place_order(make_limit_order(Side::Ask, 101, 10))
+        .unwrap();
+    engine
+        .place_order(make_limit_order(Side::Ask, 102, 10))
+        .unwrap();
+
+    let buy = make_limit_order(Side::Bid, 102, 22);
+    let (buy_order, trades) = engine.place_order(buy).unwrap();
+
+    assert_eq!(buy_order.price, Some(102));
+    assert_eq!(buy_order.filled_quantity, 22);
+    assert_eq!(buy_order.status, OrderStatus::Filled);
+
+    assert_eq!(trades.len(), 3);
+    assert_eq!(trades[0].price, 100);
+    assert_eq!(trades[0].quantity, 10);
+    assert_eq!(trades[1].price, 101);
+    assert_eq!(trades[1].quantity, 10);
+    assert_eq!(trades[2].price, 102);
+    assert_eq!(trades[2].quantity, 2);
+
+    let snap = engine.get_snapshot(1);
+    assert_eq!(snap.asks[0].price, 102);
+    assert_eq!(snap.asks[0].quantity, 8);
 }

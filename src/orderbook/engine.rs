@@ -43,6 +43,7 @@ impl MatchingEngine {
             } else {
                 OrderStatus::Open
             };
+            // println!("add order {}", order.price.unwrap());
             self.book.add_order(&order);
         } else if order.remaining() == 0 {
             order.status = OrderStatus::Filled;
@@ -103,10 +104,10 @@ impl MatchingEngine {
                 }
             }
 
-            if price_level.orders.iter().all(|o| o.quantity == 0) {
+            if price_level.orders.iter().all(|o| o.remaining() == 0) {
                 self.book.bids.remove(&best_bid_price);
             } else {
-                price_level.orders.retain(|o| o.quantity > 0);
+                price_level.orders.retain(|o| o.remaining() > 0);
             }
         }
 
@@ -115,6 +116,8 @@ impl MatchingEngine {
         }
     }
     fn match_bid(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
+        // dbg!(&taker.status);
+
         while taker.remaining() > 0 {
             let Some(best_ask_price) = self.book.best_ask() else {
                 break;
@@ -133,7 +136,7 @@ impl MatchingEngine {
                 .expect("not a valid price");
 
             for maker in price_level.orders.iter_mut() {
-                let traded = maker.quantity.min(taker.quantity);
+                let traded = maker.remaining().min(taker.remaining());
 
                 trades.push(Trade {
                     maker_order_id: maker.id,
@@ -152,10 +155,10 @@ impl MatchingEngine {
                 }
             }
 
-            if price_level.orders.iter().all(|o| o.quantity == 0) {
+            if price_level.orders.iter().all(|o| o.remaining() == 0) {
                 self.book.asks.remove(&best_ask_price);
             } else {
-                price_level.orders.retain(|o| o.quantity > 0);
+                price_level.orders.retain(|o| o.remaining() > 0);
             }
         }
     }
