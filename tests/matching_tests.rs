@@ -124,3 +124,20 @@ fn test_cancel_order() {
 
     assert!(engine.cancel_order(order_id).is_err());
 }
+
+#[test]
+fn test_market_order_insufficient_liquidity() {
+    let mut engine = MatchingEngine::new();
+
+    engine
+        .place_order(make_limit_order(Side::Ask, 100, 5))
+        .unwrap();
+
+    let buy = make_market_order(Side::Bid, 10);
+    let (buy_order, trades) = engine.place_order(buy).unwrap();
+
+    assert_eq!(trades.len(), 1);
+    assert_eq!(trades[0].quantity, 5);
+    assert_eq!(buy_order.status, OrderStatus::PartiallyFilled);
+    assert_eq!(buy_order.filled_quantity, 5);
+}
