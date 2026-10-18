@@ -46,7 +46,7 @@ pub enum OrderStatus {
     Rejected,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Trade {
     pub id: Uuid,
     pub maker_order_id: Uuid,

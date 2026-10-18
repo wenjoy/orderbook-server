@@ -29,7 +29,7 @@ pub struct PlaceOrderRequst {
 pub async fn place_order(
     State(state): State<AppState>,
     Json(req): Json<PlaceOrderRequst>,
-) -> Result<Json<Order>, StatusCode> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
     let order = Order {
         id: Uuid::new_v4(),
         side: req.side,
@@ -43,7 +43,19 @@ pub async fn place_order(
 
     let mut engine = state.engine.write().await;
     match engine.place_order(order.clone()) {
-        Ok((order, _)) => Ok(Json(order)),
+        Ok((order, trades)) => {
+            for trade in &trades {
+                let _ = state.tx.send(ServerEvent::Trade(trade.clone()));
+            }
+
+            let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
+            let snapshot = engine.get_snapshot(20);
+            let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
+            Ok(Json(serde_json::json!({
+                "order": order,
+                "trades": trades
+            })))
+        }
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
 }
@@ -88,7 +100,7 @@ pub async fn handle_socket(socket: WebSocket, state: AppState) {
         let snapshot = engine.get_snapshot(20);
         let event = ServerEvent::Snapshot(snapshot);
         if let Ok(msg) = serde_json::to_string(&event) {
-            let _ = sender.send(Message::Text(msg.into()));
+            let _ = sender.send(Message::Text(msg.into())).await;
         }
     }
 
