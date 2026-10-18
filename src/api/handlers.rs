@@ -55,10 +55,11 @@ pub async fn cancel_order(
     }
 }
 
+#[axum::debug_handler]
 pub async fn get_orderbook(
-    State(engine): State<SharedEngine>,
+    State(state): State<AppState>,
 ) -> Result<Json<OrderBookSnapshot>, StatusCode> {
-    let engine = engine.write().await;
+    let engine = state.engine.write().await;
 
     let snap = engine.get_snapshot(10);
 
