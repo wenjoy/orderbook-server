@@ -57,13 +57,13 @@ pub struct Trade {
     pub side: Side, // taker 的方向
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DepthLevel {
     pub price: u64,
     pub quantity: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct OrderBookSnapshot {
     pub bids: Vec<DepthLevel>,
     pub asks: Vec<DepthLevel>,
