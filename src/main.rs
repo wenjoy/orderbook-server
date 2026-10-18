@@ -2,14 +2,15 @@ use axum::{
     Router,
     routing::{get, post},
 };
-use orderbook_engine::orderbook::MatchingEngine;
+use orderbook_engine::api::{handlers, state::AppState};
 
 #[tokio::main]
 async fn main() {
-    let engine = MatchingEngine::new();
+    let state = AppState::new();
     let app = Router::new()
         .route("/", get(|| async {}))
-        .with_state(engine);
+        .route("/order", post(handlers::place_order))
+        .with_state(state);
 
     let addr = "0.0.0.0:8080";
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

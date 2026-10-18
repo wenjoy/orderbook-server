@@ -1,12 +1,13 @@
 use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use uuid::Uuid;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub enum Side {
     Bid,
     Ask,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub enum OrderType {
     Limit,
     Market,

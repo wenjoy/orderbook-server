@@ -1,12 +1,13 @@
 use axum::{Json, extract::State, http::StatusCode};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    api::state::SharedEngine,
-    orderbook::{book::OrderBook, engine},
+    api::state::{AppState, SharedEngine},
     types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
 };
 
+#[derive(Deserialize)]
 pub struct PlaceOrderRequst {
     pub side: Side,
     pub order_type: OrderType,
@@ -14,10 +15,11 @@ pub struct PlaceOrderRequst {
     pub quantity: u64,
 }
 
+#[axum::debug_handler]
 pub async fn place_order(
-    State(engine): State<SharedEngine>,
+    State(state): State<AppState>,
     Json(req): Json<PlaceOrderRequst>,
-) -> Result<Json<Order>, StatusCode> {
+) -> Result<String, StatusCode> {
     let order = Order {
         id: Uuid::new_v4(),
         side: req.side,
@@ -29,9 +31,9 @@ pub async fn place_order(
         timestamp: chrono::Utc::now(),
     };
 
-    let mut engine = engine.write().await;
+    let mut engine = state.engine.write().await;
     match engine.place_order(order.clone()) {
-        Ok((order, _)) => Ok(Json(order)),
+        Ok((order, _)) => Ok("Json(order)".to_string()),
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
 }
