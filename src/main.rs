@@ -10,13 +10,14 @@ async fn main() {
     let app = Router::new()
         .route("/", get(|| async {}))
         .route("/order", post(handlers::place_order))
-        .route("/order/:id/cancel", post(handlers::cancel_order))
+        .route("/order/{id}/cancel", post(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/ws", get(handlers::ws_handler))
         .with_state(state);
 
     let addr = "0.0.0.0:8080";
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    println!("Starting server at {addr}");
 
     axum::serve(listener, app).await.unwrap();
 }
