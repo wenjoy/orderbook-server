@@ -10,6 +10,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(|| async {}))
         .route("/order", post(handlers::place_order))
+        .route("/order/:id/cancel", post(handlers::cancel_order))
         .with_state(state);
 
     let addr = "0.0.0.0:8080";
