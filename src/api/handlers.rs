@@ -19,7 +19,7 @@ pub struct PlaceOrderRequst {
 pub async fn place_order(
     State(state): State<AppState>,
     Json(req): Json<PlaceOrderRequst>,
-) -> Result<String, StatusCode> {
+) -> Result<Json<Order>, StatusCode> {
     let order = Order {
         id: Uuid::new_v4(),
         side: req.side,
@@ -33,7 +33,7 @@ pub async fn place_order(
 
     let mut engine = state.engine.write().await;
     match engine.place_order(order.clone()) {
-        Ok((order, _)) => Ok("Json(order)".to_string()),
+        Ok((order, _)) => Ok(Json(order)),
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
 }
