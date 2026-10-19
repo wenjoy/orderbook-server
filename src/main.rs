@@ -3,6 +3,7 @@ use axum::{
     routing::{get, post},
 };
 use orderbook_engine::api::{handlers, state::AppState};
+use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
@@ -13,6 +14,7 @@ async fn main() {
         .route("/order/{id}/cancel", post(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/ws", get(handlers::ws_handler))
+        .layer(CorsLayer::permissive())
         .with_state(state);
 
     let addr = "0.0.0.0:8080";
