@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::{
-    error::{EngineError, Result},
+    error::{EngineError, EngineResult},
     orderbook::book::OrderBook,
     types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side, Trade},
 };
@@ -17,7 +17,7 @@ impl MatchingEngine {
         Self::default()
     }
 
-    pub fn place_order(&mut self, mut order: Order) -> Result<(Order, Vec<Trade>)> {
+    pub fn place_order(&mut self, mut order: Order) -> EngineResult<(Order, Vec<Trade>)> {
         if order.quantity == 0 {
             return Err(EngineError::InvalidOrder(String::from(
                 "quantity must be > 0",
@@ -167,7 +167,7 @@ impl MatchingEngine {
         self.book.snapshot(depth)
     }
 
-    pub fn cancel_order(&mut self, order_id: Uuid) -> Result<Order> {
+    pub fn cancel_order(&mut self, order_id: Uuid) -> EngineResult<Order> {
         let mut order = self
             .book
             .remove_order(order_id)
