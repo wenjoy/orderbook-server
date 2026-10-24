@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{
-        State, WebSocketUpgrade,
+        Query, State, WebSocketUpgrade,
         ws::{Message, WebSocket},
     },
     http::StatusCode,
@@ -12,7 +12,8 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    api::state::AppState,
+    api::{settlement::SettlementJob, state::AppState},
+    error::ApiResult,
     event::ServerEvent,
     types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
 };
@@ -144,4 +145,15 @@ pub async fn handle_socket(socket: WebSocket, state: AppState) {
     }
 
     send_task.abort();
+}
+
+struct ListQuery {
+    limit: usize,
+}
+pub async fn list_settlements(
+    State(state): State<AppState>,
+    Query(q): Query<ListQuery>,
+) -> ApiResult<Json<Vec<SettlementJob>>> {
+    let limit = q.limit.clamp(1, 200);
+    Ok(Json(state.settlement.list(limit).await))
 }

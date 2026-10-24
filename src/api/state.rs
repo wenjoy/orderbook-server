@@ -1,4 +1,4 @@
-use crate::{event::ServerEvent, orderbook::MatchingEngine};
+use crate::{api::settlement::SettlementService, event::ServerEvent, orderbook::MatchingEngine};
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
 
@@ -8,6 +8,7 @@ pub type SharedEngine = Arc<RwLock<MatchingEngine>>;
 pub struct AppState {
     pub engine: SharedEngine,
     pub tx: broadcast::Sender<ServerEvent>,
+    pub settlement: SettlementService,
 }
 impl AppState {
     pub fn new() -> Self {
@@ -15,6 +16,7 @@ impl AppState {
         Self {
             engine: Arc::new(RwLock::new(MatchingEngine::new())),
             tx,
+            settlement: SettlementService::from_env(),
         }
     }
 }
