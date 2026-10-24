@@ -12,7 +12,10 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    api::{settlement::SettlementJob, state::AppState},
+    api::{
+        settlement::{SettlementJob, SettlementStatus},
+        state::AppState,
+    },
     error::{ApiError, ApiResult},
     event::ServerEvent,
     types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
@@ -168,4 +171,38 @@ pub async fn get_settlement(
         .await
         .map(Json)
         .ok_or(ApiError::NotFound(format!("settlement {id} not found")))
+}
+
+struct ConfirmSettlementRequest {
+    signature: String,
+    success: bool,
+    error: Option<String>,
+}
+
+pub async fn confirm_settlement(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(req): Json<ConfirmSettlementRequest>,
+) -> ApiResult<Json<SettlementJob>> {
+    if req.signature.trim().is_empty() && req.success {
+        return Err(ApiError::BadRequest(
+            "signature is required when success=true".into(),
+        ));
+    }
+
+    let job = state
+        .settlement
+        .confirm(id, req.signature, req.success, req.error)
+        .await
+        .map_err(ApiError::NotFound)?;
+
+    state.broadcast(ServerEvent::SettlementUpdate {
+        settlement_id: id,
+        status: SettlementStatus::Confirmed,
+        signature: job.signature.clone(),
+        trade_price: job.trade.price,
+        trade_quantity: job.trade.quantity,
+    });
+
+    Ok(Json(job))
 }

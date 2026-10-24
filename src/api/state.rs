@@ -1,4 +1,6 @@
-use crate::{api::settlement::SettlementService, event::ServerEvent, orderbook::MatchingEngine};
+use crate::{
+    api::settlement::SettlementService, event::ServerEvent, orderbook::MatchingEngine, types::Trade,
+};
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
 
@@ -18,6 +20,10 @@ impl AppState {
             tx,
             settlement: SettlementService::from_env(),
         }
+    }
+
+    pub fn broadcast(&self, event: ServerEvent) {
+        self.tx.send(event);
     }
 }
 

@@ -4,12 +4,13 @@ use std::{
     sync::{Arc, atomic::AtomicU64},
 };
 
+use serde::Serialize;
 use tokio::sync::RwLock;
 
 use crate::types::Trade;
 
-#[derive(Clone)]
-enum SettlementStatus {
+#[derive(Clone, Serialize, Debug)]
+pub enum SettlementStatus {
     Pending,
     Simulated,
     Submitted,
@@ -19,15 +20,15 @@ enum SettlementStatus {
 
 #[derive(Clone)]
 pub struct SettlementJob {
-    id: u64,
-    status: SettlementStatus,
-    trade: Trade,
-    ix_data_hex: String,
-    accounts: SettlementAccounts,
-    signautre: Option<String>,
-    error: Option<String>,
-    created_at_ms: u64,
-    updated_at_ms: u64,
+    pub id: u64,
+    pub status: SettlementStatus,
+    pub trade: Trade,
+    pub ix_data_hex: String,
+    pub accounts: SettlementAccounts,
+    pub signature: Option<String>,
+    pub error: Option<String>,
+    pub created_at_ms: u64,
+    pub updated_at_ms: u64,
 }
 
 enum SettlementMode {
@@ -119,4 +120,35 @@ impl SettlementService {
     pub async fn get(&self, id: u64) -> Option<SettlementJob> {
         self.jobs.read().await.get(&id).cloned()
     }
+
+    pub async fn confirm(
+        &self,
+        id: u64,
+        signature: String,
+        success: bool,
+        error: Option<String>,
+    ) -> Result<SettlementJob, String> {
+        let mut map = self.jobs.write().await;
+        let job = map
+            .get_mut(&id)
+            .ok_or(format!("settlement id {} not found", id))?;
+
+        job.updated_at_ms = now_ms();
+        if success {
+            job.status = SettlementStatus::Confirmed;
+            job.signature = Some(signature);
+            job.error = None;
+        } else {
+            job.status = SettlementStatus::Failed;
+            job.signature = Some(signature);
+            job.error = error.or(Some("confirm reported failure".into()));
+        }
+        Ok(job.clone())
+    }
+}
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
 }

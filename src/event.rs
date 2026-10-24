@@ -1,6 +1,9 @@
 use serde::Serialize;
 
-use crate::types::{Order, OrderBookSnapshot, Side, Trade};
+use crate::{
+    api::settlement::SettlementStatus,
+    types::{Order, OrderBookSnapshot, Side, Trade},
+};
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(tag = "type", content = "data")]
@@ -17,4 +20,11 @@ pub enum ServerEvent {
     },
     Trade(Trade),
     OrderUpdate(Order),
+    SettlementUpdate {
+        settlement_id: u64,
+        status: SettlementStatus,
+        signature: Option<String>,
+        trade_price: u64,
+        trade_quantity: u64,
+    },
 }
