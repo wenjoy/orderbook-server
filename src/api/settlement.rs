@@ -58,7 +58,7 @@ struct SettlementAccounts {
 }
 
 #[derive(Clone)]
-struct SettlementConfig {
+pub struct SettlementConfig {
     pub mode: String,
     pub program_id: String,
     pub market_pubkey: String,
