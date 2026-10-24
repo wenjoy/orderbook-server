@@ -115,4 +115,8 @@ impl SettlementService {
         jobs.truncate(limit);
         jobs
     }
+
+    pub async fn get(&self, id: u64) -> Option<SettlementJob> {
+        self.jobs.read().await.get(&id).cloned()
+    }
 }

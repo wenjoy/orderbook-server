@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{
-        Query, State, WebSocketUpgrade,
+        Path, Query, State, WebSocketUpgrade,
         ws::{Message, WebSocket},
     },
     http::StatusCode,
@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     api::{settlement::SettlementJob, state::AppState},
-    error::ApiResult,
+    error::{ApiError, ApiResult},
     event::ServerEvent,
     types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
 };
@@ -156,4 +156,16 @@ pub async fn list_settlements(
 ) -> ApiResult<Json<Vec<SettlementJob>>> {
     let limit = q.limit.clamp(1, 200);
     Ok(Json(state.settlement.list(limit).await))
+}
+
+pub async fn get_settlement(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> ApiResult<Json<SettlementJob>> {
+    state
+        .settlement
+        .get(id)
+        .await
+        .map(Json)
+        .ok_or(ApiError::NotFound(format!("settlement {id} not found")))
 }
