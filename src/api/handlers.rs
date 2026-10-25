@@ -69,16 +69,12 @@ pub async fn place_order(
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
 }
-#[derive(Deserialize)]
-pub struct CancelOrdedrRequest {
-    pub order_id: Uuid,
-}
 #[axum::debug_handler]
 pub async fn cancel_order(
     State(state): State<AppState>,
-    Json(req): Json<CancelOrdedrRequest>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<Order>, StatusCode> {
-    let order_id = req.order_id;
+    let order_id = id;
     let mut engine = state.engine.write().await;
 
     match engine.cancel_order(order_id) {

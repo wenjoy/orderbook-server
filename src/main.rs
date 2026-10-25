@@ -1,6 +1,6 @@
 use axum::{
     Router,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use orderbook_engine::api::{handlers, state::AppState};
 use tower_http::cors::CorsLayer;
@@ -11,7 +11,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(|| async {}))
         .route("/orders", post(handlers::place_order))
-        .route("/order/{id}/cancel", post(handlers::cancel_order))
+        .route("/orders/{id}", delete(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/trades", get(handlers::get_recent_trades))
         .route("/settlements", get(handlers::list_settlements))
