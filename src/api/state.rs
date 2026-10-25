@@ -1,5 +1,6 @@
 use crate::{
-    api::settlement::SettlementService, event::ServerEvent, orderbook::MatchingEngine, types::Trade,
+    api::settlement::SettlementService, engine::MatchingEngine, engine::order::Trade,
+    event::ServerEvent,
 };
 use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{RwLock, broadcast};

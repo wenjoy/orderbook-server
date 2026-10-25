@@ -1,10 +1,19 @@
+pub mod book;
+pub mod order;
+
+use book::OrderBook;
+use order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade};
 use uuid::Uuid;
 
-use crate::{
-    error::{EngineError, EngineResult},
-    orderbook::book::OrderBook,
-    types::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
-};
+#[derive(Debug)]
+pub enum EngineError {
+    OrderNotFound(uuid::Uuid),
+    InvalidOrder(String),
+    InSufficientLiquidity,
+    OrderAlreadyClosed,
+}
+
+pub type EngineResult<T> = std::result::Result<T, EngineError>;
 
 #[derive(Clone, Default)]
 pub struct MatchingEngine {
@@ -45,6 +54,7 @@ impl MatchingEngine {
             order.status = OrderStatus::PartiallyFilled;
         }
 
+        dbg!(&order);
         self.trades.extend(new_trades.clone());
         Ok((order, new_trades))
     }

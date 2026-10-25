@@ -1,8 +1,8 @@
 #[test]
 fn test_matching_throughput() {
     use chrono::Utc;
-    use orderbook_engine::orderbook::MatchingEngine;
-    use orderbook_engine::types::*;
+    use orderbook_engine::engine::MatchingEngine;
+    use orderbook_engine::engine::order::*;
     use std::time::Instant;
     use uuid::Uuid;
 

@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, VecDeque};
 
 use uuid::Uuid;
 
-use crate::types::{DepthLevel, Order, OrderBookSnapshot, Side};
+use super::order::{DepthLevel, Order, OrderBookSnapshot, Side};
 
 #[derive(Clone, Default)]
 pub struct PriceLevel {

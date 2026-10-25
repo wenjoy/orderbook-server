@@ -12,12 +12,12 @@ pub enum Side {
 pub struct Order {
     pub id: Uuid,
     pub side: Side,
-    pub price: Option<u64>, // Market 单可以为 None，单位：最小价格单位（比如 0.01 USDC = 1）
-    pub quantity: u64,      // 原始数量
-    pub filled_quantity: u64, // 已成交数量
-    pub status: OrderStatus,
+    pub price: Option<u64>,
+    pub quantity: u64,
     pub timestamp: DateTime<Utc>,
     pub user: String,
+    pub filled_quantity: u64,
+    pub status: OrderStatus,
 }
 
 impl Order {

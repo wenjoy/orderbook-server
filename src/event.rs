@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     api::settlement::SettlementStatus,
-    types::{Order, OrderBookSnapshot, Side, Trade},
+    engine::order::{Order, OrderBookSnapshot, Side, Trade},
 };
 
 #[derive(Debug, Serialize, Clone)]

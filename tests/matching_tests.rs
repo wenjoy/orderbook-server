@@ -1,8 +1,6 @@
 use chrono::Utc;
-use orderbook_engine::orderbook::{MatchingEngine, engine};
-use orderbook_engine::types::OrderStatus::Cancelled;
-use orderbook_engine::types::Side::Ask;
-use orderbook_engine::types::*;
+use orderbook_engine::engine::MatchingEngine;
+use orderbook_engine::engine::order::*;
 use uuid::Uuid;
 
 fn make_limit_order(side: Side, price: u64, qty: u64) -> Order {

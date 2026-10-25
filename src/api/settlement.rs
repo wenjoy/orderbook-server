@@ -7,7 +7,7 @@ use std::{
 use serde::Serialize;
 use tokio::sync::RwLock;
 
-use crate::types::Trade;
+use crate::engine::order::Trade;
 
 #[derive(Clone, Serialize, Debug)]
 pub enum SettlementStatus {
