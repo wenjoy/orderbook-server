@@ -1,14 +1,17 @@
 use crate::{
     api::settlement::SettlementService, event::ServerEvent, orderbook::MatchingEngine, types::Trade,
 };
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{RwLock, broadcast};
 
 pub type SharedEngine = Arc<RwLock<MatchingEngine>>;
 
+const MAX_RECENT_TRADES: usize = 200;
+
 #[derive(Clone)]
 pub struct AppState {
     pub engine: SharedEngine,
+    pub recent_trades: Arc<RwLock<VecDeque<Trade>>>,
     pub tx: broadcast::Sender<ServerEvent>,
     pub settlement: SettlementService,
 }
@@ -18,6 +21,7 @@ impl AppState {
         Self {
             engine: Arc::new(RwLock::new(MatchingEngine::new())),
             tx,
+            recent_trades: Arc::new(RwLock::new(VecDeque::with_capacity(MAX_RECENT_TRADES))),
             settlement: SettlementService::from_env(),
         }
     }

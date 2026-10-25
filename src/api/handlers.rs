@@ -8,7 +8,7 @@ use axum::{
     response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
@@ -18,7 +18,7 @@ use crate::{
     },
     error::{ApiError, ApiResult},
     event::ServerEvent,
-    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side},
+    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side, Trade},
 };
 
 #[derive(Deserialize)]
@@ -90,6 +90,18 @@ pub async fn get_orderbook(
     let snap = engine.get_snapshot(10);
 
     Ok(Json(snap))
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct TradesResponse {
+    pub trades: Vec<Trade>,
+}
+#[axum::debug_handler]
+pub async fn get_recent_trades(State(state): State<AppState>) -> ApiResult<Json<TradesResponse>> {
+    let trades = state.recent_trades.read().await;
+    Ok(Json(TradesResponse {
+        trades: trades.iter().cloned().collect(),
+    }))
 }
 
 pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {

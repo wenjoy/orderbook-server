@@ -13,6 +13,7 @@ async fn main() {
         .route("/order", post(handlers::place_order))
         .route("/order/{id}/cancel", post(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
+        .route("/trades", get(handlers::get_recent_trades))
         .route("/ws", get(handlers::ws_handler))
         .layer(CorsLayer::permissive())
         .with_state(state);
