@@ -18,7 +18,7 @@ pub enum SettlementStatus {
     Failed,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct SettlementJob {
     pub id: u64,
     pub status: SettlementStatus,
@@ -49,8 +49,8 @@ impl SettlementMode {
         }
     }
 }
-#[derive(Clone)]
-struct SettlementAccounts {
+#[derive(Clone, Serialize)]
+pub struct SettlementAccounts {
     authority: String,
     market: String,
     maker: String,

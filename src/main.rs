@@ -14,6 +14,7 @@ async fn main() {
         .route("/order/{id}/cancel", post(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/trades", get(handlers::get_recent_trades))
+        .route("/settlements", get(handlers::list_settlements))
         .route("/ws", get(handlers::ws_handler))
         .layer(CorsLayer::permissive())
         .with_state(state);

@@ -162,9 +162,12 @@ pub async fn handle_socket(socket: WebSocket, state: AppState) {
     send_task.abort();
 }
 
-struct ListQuery {
+#[derive(Deserialize)]
+pub struct ListQuery {
     limit: usize,
 }
+
+#[axum::debug_handler]
 pub async fn list_settlements(
     State(state): State<AppState>,
     Query(q): Query<ListQuery>,
