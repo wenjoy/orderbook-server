@@ -7,22 +7,17 @@ pub enum Side {
     Bid,
     Ask,
 }
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum OrderType {
-    Limit,
-    Market,
-}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Order {
     pub id: Uuid,
     pub side: Side,
-    pub order_type: OrderType,
     pub price: Option<u64>, // Market 单可以为 None，单位：最小价格单位（比如 0.01 USDC = 1）
     pub quantity: u64,      // 原始数量
     pub filled_quantity: u64, // 已成交数量
     pub status: OrderStatus,
     pub timestamp: DateTime<Utc>,
+    pub user: String,
 }
 
 impl Order {

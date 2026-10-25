@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     error::{EngineError, EngineResult},
     orderbook::book::OrderBook,
-    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side, Trade},
+    types::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
 };
 
 #[derive(Clone, Default)]
@@ -24,12 +24,6 @@ impl MatchingEngine {
             )));
         }
 
-        if matches!(order.order_type, OrderType::Limit) && order.price.is_none() {
-            return Err(EngineError::InvalidOrder(
-                "limit order requires price".into(),
-            ));
-        }
-
         let mut new_trades: Vec<Trade> = Vec::new();
 
         match order.side {
@@ -37,7 +31,7 @@ impl MatchingEngine {
             Side::Bid => self.match_bid(&mut order, &mut new_trades),
         }
 
-        if order.remaining() > 0 && matches!(order.order_type, OrderType::Limit) {
+        if order.remaining() > 0 {
             order.status = if order.filled_quantity > 0 {
                 OrderStatus::PartiallyFilled
             } else {

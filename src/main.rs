@@ -10,7 +10,7 @@ async fn main() {
     let state = AppState::new();
     let app = Router::new()
         .route("/", get(|| async {}))
-        .route("/order", post(handlers::place_order))
+        .route("/orders", post(handlers::place_order))
         .route("/order/{id}/cancel", post(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/trades", get(handlers::get_recent_trades))

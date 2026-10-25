@@ -13,7 +13,7 @@ fn test_matching_throughput() {
         let order = Order {
             id: Uuid::new_v4(),
             side: Side::Ask,
-            order_type: OrderType::Limit,
+            user: "limit".into(),
             price: Some(100 + (i % 10) as u64),
             quantity: 10,
             filled_quantity: 0,
@@ -30,7 +30,7 @@ fn test_matching_throughput() {
         let buy = Order {
             id: Uuid::new_v4(),
             side: Side::Bid,
-            order_type: OrderType::Limit,
+            user: "limit".into(),
             price: Some(110),
             quantity: 5,
             filled_quantity: 0,

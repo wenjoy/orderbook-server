@@ -18,15 +18,15 @@ use crate::{
     },
     error::{ApiError, ApiResult},
     event::ServerEvent,
-    types::{Order, OrderBookSnapshot, OrderStatus, OrderType, Side, Trade},
+    types::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
 };
 
 #[derive(Deserialize)]
 pub struct PlaceOrderRequst {
     pub side: Side,
-    pub order_type: OrderType,
     pub price: Option<u64>,
     pub quantity: u64,
+    pub user: String,
 }
 
 #[axum::debug_handler]
@@ -37,7 +37,7 @@ pub async fn place_order(
     let order = Order {
         id: Uuid::new_v4(),
         side: req.side,
-        order_type: req.order_type,
+        user: req.user,
         price: req.price,
         quantity: req.quantity,
         filled_quantity: 0,

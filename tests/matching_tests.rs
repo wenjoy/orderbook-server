@@ -9,7 +9,7 @@ fn make_limit_order(side: Side, price: u64, qty: u64) -> Order {
     Order {
         id: Uuid::new_v4(),
         side,
-        order_type: OrderType::Limit,
+        user: "limit".into(),
         price: Some(price),
         quantity: qty,
         filled_quantity: 0,
@@ -22,7 +22,7 @@ fn make_market_order(side: Side, qty: u64) -> Order {
     Order {
         id: Uuid::new_v4(),
         side,
-        order_type: OrderType::Market,
+        user: "market".into(),
         price: None,
         quantity: qty,
         filled_quantity: 0,
