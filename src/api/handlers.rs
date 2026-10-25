@@ -16,9 +16,9 @@ use crate::{
         settlement::{SettlementJob, SettlementStatus},
         state::AppState,
     },
+    engine::order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
     error::{ApiError, ApiResult},
     event::ServerEvent,
-    types::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
 };
 
 #[derive(Deserialize)]
@@ -52,13 +52,17 @@ pub async fn place_order(
                 let _ = state.tx.send(ServerEvent::Trade(trade.clone()));
             }
 
+            let order_id = order.id;
+            let remaining = order.remaining();
+
             state.record_trades(&trades).await;
 
             let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
             let snapshot = engine.get_snapshot(20);
             let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
             Ok(Json(serde_json::json!({
-                "order": order,
+                "order_id": order_id,
+                "remaining": remaining,
                 "trades": trades
             })))
         }
