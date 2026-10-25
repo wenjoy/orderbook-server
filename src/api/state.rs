@@ -29,6 +29,20 @@ impl AppState {
     pub fn broadcast(&self, event: ServerEvent) {
         self.tx.send(event);
     }
+
+    pub async fn record_trades(&self, trades: &Vec<Trade>) {
+        if trades.is_empty() {
+            return;
+        }
+
+        let mut recent = self.recent_trades.write().await;
+        for t in trades {
+            if recent.len() > MAX_RECENT_TRADES {
+                recent.pop_front();
+            }
+            recent.push_back(t.clone());
+        }
+    }
 }
 
 impl Default for AppState {

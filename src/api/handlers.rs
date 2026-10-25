@@ -52,6 +52,8 @@ pub async fn place_order(
                 let _ = state.tx.send(ServerEvent::Trade(trade.clone()));
             }
 
+            state.record_trades(&trades).await;
+
             let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
             let snapshot = engine.get_snapshot(20);
             let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
