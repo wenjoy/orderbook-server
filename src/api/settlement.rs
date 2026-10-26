@@ -18,7 +18,7 @@ pub enum SettlementStatus {
     Failed,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct SettlementJob {
     pub id: u64,
     pub status: SettlementStatus,
@@ -50,7 +50,7 @@ impl SettlementMode {
         }
     }
 }
-#[derive(Clone, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct SettlementAccounts {
     authority: String,
     market: String,
@@ -175,7 +175,7 @@ impl SettlementService {
     pub async fn list(&self, limit: usize) -> Vec<SettlementJob> {
         let map = self.jobs.read().await;
         let mut jobs: Vec<_> = map.values().cloned().collect();
-        jobs.sort_by(|a, b| a.id.cmp(&b.id));
+        jobs.sort_by_key(|a| a.id);
         jobs.truncate(limit);
         jobs
     }

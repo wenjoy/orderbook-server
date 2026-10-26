@@ -44,7 +44,7 @@ impl AppState {
             recent.push_back(t.clone());
         }
 
-        let jobs = self.settlement.enqueue_trades(trades);
+        let jobs = self.settlement.enqueue_trades(trades).await;
     }
 }
 
