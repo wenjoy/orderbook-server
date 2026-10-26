@@ -1,13 +1,13 @@
 use std::{
     collections::HashMap,
-    env,
+    env, marker,
     sync::{Arc, atomic::AtomicU64},
 };
 
 use serde::Serialize;
 use tokio::sync::RwLock;
 
-use crate::engine::order::Trade;
+use crate::engine::order::{Side, Trade};
 
 #[derive(Clone, Serialize, Debug)]
 pub enum SettlementStatus {
@@ -105,6 +105,40 @@ impl SettlementService {
         }
     }
 
+    async fn create_job(&self, trade: Trade) -> SettlementJob {
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let taker_is_buy = matches!(trade.side, Side::Bid);
+        let ix_data = pack_settle_trade(trade.price, trade.quantity, taker_is_buy);
+        let ts = now_ms();
+
+        SettlementJob {
+            id,
+            status: SettlementStatus::Pending,
+            trade: trade.clone(),
+            ix_data_hex: hex_encode(&ix_data),
+            signature: None,
+            error: None,
+            created_at_ms: ts,
+            updated_at_ms: ts,
+            accounts: SettlementAccounts {
+                authority: self.config.authority_pubkey,
+                market: self.config.market_pubkey,
+                maker: placeholder_vault(
+                    &self.config.program_id,
+                    &self.config.market_pubkey,
+                    &trade.maker_user,
+                ),
+                taker: placeholder_vault(
+                    &self.config.program_id,
+                    &self.config.market_pubkey,
+                    &trade.taker_user,
+                ),
+            },
+        }
+    }
+
     pub fn from_env() -> Self {
         Self::new(SettlementConfig::from_env())
     }
@@ -151,4 +185,25 @@ fn now_ms() -> u64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
+}
+
+fn pack_settle_trade(price: u64, quantity: u64, taker_is_buy: bool) -> Vec<u8> {
+    let mut created = Vec::with_capacity(18);
+    created.push(4);
+    created.extend_from_slice(&price.to_le_bytes());
+    created.extend_from_slice(&quantity.to_le_bytes());
+    created.push(u8::from(taker_is_buy));
+    created
+}
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+fn placeholder_vault(program_id: &str, market: &str, user: &str) -> St {
+    format!(
+        "vault:{}:{}:{}",
+        &program_id[..8.min(program_id.len())],
+        &market[..8.min(market.len())],
+        user
+    )
 }

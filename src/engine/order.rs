@@ -50,6 +50,8 @@ pub struct Trade {
     pub quantity: u64,
     pub timestamp: DateTime<Utc>,
     pub side: Side, // taker 的方向
+    pub taker_user: String,
+    pub maker_user: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
