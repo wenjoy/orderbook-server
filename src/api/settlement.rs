@@ -158,6 +158,16 @@ impl SettlementService {
         job
     }
 
+    pub async fn enqueue_trades(&self, trades: &[Trade]) -> Vec<SettlementJob> {
+        let mut created = Vec::with_capacity(trades.len());
+        for trade in trades {
+            let job = self.create_job(trade.clone()).await;
+            let job = self.process_job(job).await;
+            created.push(job);
+        }
+        created
+    }
+
     pub fn from_env() -> Self {
         Self::new(SettlementConfig::from_env())
     }
