@@ -31,6 +31,7 @@ pub struct SettlementJob {
     pub updated_at_ms: u64,
 }
 
+#[derive(Clone, Serialize)]
 enum SettlementMode {
     DryRun,
     Queue,
@@ -57,9 +58,9 @@ pub struct SettlementAccounts {
     taker: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct SettlementConfig {
-    pub mode: String,
+    pub mode: SettlementMode,
     pub program_id: String,
     pub market_pubkey: String,
     pub authority_pubkey: String,
@@ -71,11 +72,7 @@ impl SettlementConfig {
     fn from_env() -> Self {
         let mode = SettlementMode::from_env();
         Self {
-            mode: match mode {
-                SettlementMode::DryRun => "dry_run".into(),
-                SettlementMode::Queue => "dry_run".into(),
-                SettlementMode::HotWallet => "dry_run".into(),
-            },
+            mode,
             program_id: env::var("SETTLEMENT_PROGRAM_ID")
                 .unwrap_or("Settlement11111111111111111111111111111111".into()),
             market_pubkey: env::var("SETTLEMENT_MARKET")
@@ -123,8 +120,8 @@ impl SettlementService {
             created_at_ms: ts,
             updated_at_ms: ts,
             accounts: SettlementAccounts {
-                authority: self.config.authority_pubkey,
-                market: self.config.market_pubkey,
+                authority: self.config.authority_pubkey.clone(),
+                market: self.config.market_pubkey.clone(),
                 maker: placeholder_vault(
                     &self.config.program_id,
                     &self.config.market_pubkey,
@@ -137,6 +134,28 @@ impl SettlementService {
                 ),
             },
         }
+    }
+
+    async fn process_job(&self, mut job: SettlementJob) -> SettlementJob {
+        match self.config.mode {
+            SettlementMode::DryRun => {
+                job.status = SettlementStatus::Simulated;
+                job.signature = Some(format!("dry_run_sig_{}", job.id));
+                job.updated_at_ms = now_ms();
+            }
+            SettlementMode::Queue => {
+                //stay Pending
+            }
+            SettlementMode::HotWallet => {
+                job.status = SettlementStatus::Submitted;
+                job.signature = Some(format!("hot_wallet_sig_{}", job.id));
+                job.updated_at_ms = now_ms();
+            }
+        }
+
+        let mut map = self.jobs.write().await;
+        map.insert(job.id, job.clone());
+        job
     }
 
     pub fn from_env() -> Self {
@@ -199,7 +218,7 @@ fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
-fn placeholder_vault(program_id: &str, market: &str, user: &str) -> St {
+fn placeholder_vault(program_id: &str, market: &str, user: &str) -> String {
     format!(
         "vault:{}:{}:{}",
         &program_id[..8.min(program_id.len())],
