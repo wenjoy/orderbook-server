@@ -32,7 +32,7 @@ pub struct SettlementJob {
 }
 
 #[derive(Clone, Serialize)]
-enum SettlementMode {
+pub enum SettlementMode {
     DryRun,
     Queue,
     HotWallet,
