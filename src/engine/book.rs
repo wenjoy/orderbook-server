@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, VecDeque};
+use std::{
+    collections::{BTreeMap, VecDeque},
+    default,
+};
 
 use uuid::Uuid;
 
@@ -23,16 +26,38 @@ pub struct OrderBook {
     pub order_index: std::collections::HashMap<Uuid, (Side, u64)>, // order_id -> (side, price)
     pub sequence: u64,
 }
+
 impl OrderBook {
+    pub fn new() -> Self {
+        Self::default()
+    }
     pub fn best_ask(&self) -> Option<u64> {
         self.asks.keys().next().copied()
     }
     pub fn best_bid(&self) -> Option<u64> {
         self.bids.keys().next_back().copied()
     }
-}
-
-impl OrderBook {
+    pub fn bid_depth(&self, depth: usize) -> Vec<DepthLevel> {
+        self.bids
+            .iter()
+            .rev()
+            .take(depth)
+            .map(|(price, price_level)| DepthLevel {
+                price: *price,
+                quantity: price_level.orders.iter().map(|o| o.quantity).sum(),
+            })
+            .collect()
+    }
+    pub fn ask_depth(&self, depth: usize) -> Vec<DepthLevel> {
+        self.asks
+            .iter()
+            .take(depth)
+            .map(|(price, price_level)| DepthLevel {
+                price: *price,
+                quantity: price_level.orders.iter().map(|o| o.quantity).sum(),
+            })
+            .collect()
+    }
     pub fn add_order(&mut self, order: &Order) {
         let price = order.price.expect("limit order must have price");
         let book = match order.side {
