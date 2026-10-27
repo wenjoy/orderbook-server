@@ -48,6 +48,8 @@ pub async fn place_order(
     let mut engine = state.engine.write().await;
     match engine.place_order(order.clone()) {
         Ok((order, trades)) => {
+            //NOTE: easy to fall into dead lock trap
+            drop(engine);
             for trade in &trades {
                 let _ = state.tx.send(ServerEvent::Trade(trade.clone()));
             }
@@ -56,10 +58,11 @@ pub async fn place_order(
             let remaining = order.remaining();
 
             state.record_trades(&trades).await;
+            state.broadcast_orderbook().await;
 
-            let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
-            let snapshot = engine.get_snapshot(20);
-            let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
+            // let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
+            // let snapshot = engine.get_snapshot(20);
+            // let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
             Ok(Json(serde_json::json!({
                 "order_id": order_id,
                 "remaining": remaining,
@@ -143,11 +146,12 @@ pub async fn handle_socket(socket: WebSocket, state: AppState) {
                     let heartbeat = ServerEvent::Heartbeat {
                         timestamp: chrono::Utc::now().timestamp_millis(),
                     };
-                    if let Ok(msg) = serde_json::to_string(&heartbeat) {
-                        if sender.send(Message::Text(msg.into())).await.is_err() {
-                            break;
-                        }
-                    }
+                    //TODO: why need heart beat?
+                    // if let Ok(msg) = serde_json::to_string(&heartbeat) {
+                    //     if sender.send(Message::Text(msg.into())).await.is_err() {
+                    //         break;
+                    //     }
+                    // }
                 }
             }
         }

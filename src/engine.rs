@@ -17,8 +17,8 @@ pub type EngineResult<T> = std::result::Result<T, EngineError>;
 
 #[derive(Clone, Default)]
 pub struct MatchingEngine {
-    book: OrderBook,
-    trades: Vec<Trade>,
+    pub book: OrderBook,
+    pub trades: Vec<Trade>,
 }
 
 impl MatchingEngine {
