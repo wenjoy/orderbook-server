@@ -1,5 +1,6 @@
 use crate::{
-    api::settlement::SettlementService, engine::MatchingEngine, engine::order::Trade,
+    api::settlement::SettlementService,
+    engine::{MatchingEngine, book::OrderBook, order::Trade},
     event::ServerEvent,
 };
 use std::{collections::VecDeque, sync::Arc};
@@ -15,11 +16,13 @@ pub struct AppState {
     pub recent_trades: Arc<RwLock<VecDeque<Trade>>>,
     pub tx: broadcast::Sender<ServerEvent>,
     pub settlement: SettlementService,
+    pub book: Arc<RwLock<OrderBook>>,
 }
 impl AppState {
     pub fn new() -> Self {
         let (tx, _) = broadcast::channel(1024);
         Self {
+            book: Arc::new(RwLock::new(OrderBook::new())),
             engine: Arc::new(RwLock::new(MatchingEngine::new())),
             tx,
             recent_trades: Arc::new(RwLock::new(VecDeque::with_capacity(MAX_RECENT_TRADES))),
@@ -29,6 +32,15 @@ impl AppState {
 
     pub fn broadcast(&self, event: ServerEvent) {
         self.tx.send(event);
+    }
+
+    pub async fn broadcast_orderbook(&self) {
+        let book = self.book.read().await;
+        let event = ServerEvent::OrderbookUpdate {
+            bids: book.bid_depth(20),
+            asks: book.ask_depth(20),
+        };
+        self.broadcast(event);
     }
 
     pub async fn record_trades(&self, trades: &Vec<Trade>) {

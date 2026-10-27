@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     api::settlement::SettlementStatus,
-    engine::order::{Order, OrderBookSnapshot, Side, Trade},
+    engine::order::{DepthLevel, Order, OrderBookSnapshot, Side, Trade},
 };
 
 #[derive(Debug, Serialize, Clone)]
@@ -19,7 +19,12 @@ pub enum ServerEvent {
         timestamp: i64,
     },
     Trade(Trade),
+    //TODO: deprecated
     OrderUpdate(Order),
+    OrderbookUpdate {
+        bids: Vec<DepthLevel>,
+        asks: Vec<DepthLevel>,
+    },
     SettlementUpdate {
         settlement_id: u64,
         status: SettlementStatus,
