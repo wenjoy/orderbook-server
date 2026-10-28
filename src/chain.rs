@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use solana_client::rpc_client::RpcClient;
+use solana_client::{rpc_client::RpcClient, rpc_response::transaction::containers::Vec};
 use solana_sdk::{
     message::{AccountMeta, Instruction},
     pubkey::Pubkey,
@@ -13,9 +13,12 @@ use crate::api::settlement::pack_settle_trade;
 
 pub fn load_keypair() -> Result<Keypair, String> {
     if let Ok(path) = env::var("SETTLEMENT_KEYPAIR") {
-        let data = fs::read_to_string(path)
-            .map_err(|e| format!("read settlement keypair file error : {}", e))?;
-        return keypair_from_json(&data);
+        // let data = fs::read_to_string(path)
+        //     .map_err(|e| format!("read settlement keypair file error : {}", e))?;
+        // return keypair_from_json(&data);
+        let data =
+            fs::read(path).map_err(|e| format!("read settlement keypair file error : {}", e))?;
+        return keypair_from_bytes(&data);
     };
 
     if let Ok(json) = env::var("SETTLEMENT_KEYPAIR_JSON") {
@@ -25,7 +28,13 @@ pub fn load_keypair() -> Result<Keypair, String> {
 }
 
 fn keypair_from_json(data: &str) -> Result<Keypair, String> {
-    todo!()
+    let bytes: &[u8] =
+        serde_json::from_str(data.trim()).map_err(|e| format!("parse keypari json error {}", e))?;
+    keypair_from_bytes(&bytes)
+}
+
+fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
+    Keypair::try_from(bytes).map_err(|e| format!("invalid keypair bytes {}", e))
 }
 
 fn user_to_pubkey(user: &str) -> Pubkey {
