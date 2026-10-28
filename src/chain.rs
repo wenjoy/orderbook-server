@@ -1,0 +1,93 @@
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::{
+    message::{AccountMeta, Instruction},
+    pubkey::Pubkey,
+    signature::Keypair,
+    signer::Signer,
+    transaction::Transaction,
+};
+
+use crate::api::settlement::pack_settle_trade;
+
+pub fn load_keypair() -> Result<Keypair, String> {
+    todo!()
+}
+
+fn keypair_from_json(data: &str) -> Result<Keypair, String> {
+    todo!()
+}
+
+fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
+    todo!()
+}
+
+fn user_to_pubkey(user: &str) -> Pubkey {
+    todo!()
+}
+
+fn parse_pubkey(s: &str, label: &str) -> Result<Pubkey, String> {
+    todo!()
+}
+
+fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (Pubkey, u8) {
+    todo!()
+}
+
+struct SubmitParams {
+    program_id: String,
+    rpc_url: String,
+    market: String,
+    maker_user: String,
+    taker_user: String,
+    price: u64,
+    quantity: u64,
+    taker_is_buy: bool,
+}
+struct SubmitResult {
+    pub signature: String,
+    pub maker_vault: String,
+    pub taker_vault: String,
+    pub authority: String,
+}
+
+pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String> {
+    let keypair = load_keypair()?;
+    let authority = keypair.pubkey();
+
+    let program_id = parse_pubkey(&params.program_id, "program_id")?;
+    let market = parse_pubkey(&params.market, "market")?;
+    let maker_owner = user_to_pubkey(&params.maker_user);
+    let taker_owner = user_to_pubkey(&params.taker_user);
+
+    let (maker_vault, _) = derive_user_vault(&program_id, &market, &maker_owner);
+    let (taker_vault, _) = derive_user_vault(&program_id, &market, &taker_owner);
+
+    let data = pack_settle_trade(params.price, params.quantity, params.taker_is_buy);
+    let ix = Instruction {
+        program_id,
+        accounts: vec![
+            AccountMeta::new_readonly(authority, true),
+            AccountMeta::new(market, false),
+            AccountMeta::new(maker_vault, false),
+            AccountMeta::new(taker_vault, false),
+        ],
+        data,
+    };
+    let client = RpcClient::new(params.rpc_url);
+    let recent = client
+        .get_latest_blockhash()
+        .map_err(|e| format!("get_latest_blockhash error: {e}"))?;
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&authority), &[keypair], recent);
+    let sig = client
+        .send_and_confirm_transaction(&tx)
+        .map_err(|e| format!("send and confimr error: {}", e))?;
+    Ok(SubmitResult {
+        signature: sig.to_string(),
+        authority: authority.to_string(),
+        maker_vault: maker_vault.to_string(),
+        taker_vault: taker_vault.to_string(),
+    })
+}
+
+#[cfg(test)]
+mod tests {}
