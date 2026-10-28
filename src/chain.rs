@@ -1,4 +1,5 @@
-use std::{env, fs};
+use core::hash;
+use std::{env, fs, str::FromStr};
 
 use solana_client::{rpc_client::RpcClient, rpc_response::transaction::containers::Vec};
 use solana_sdk::{
@@ -37,12 +38,8 @@ fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
     Keypair::try_from(bytes).map_err(|e| format!("invalid keypair bytes {}", e))
 }
 
-fn user_to_pubkey(user: &str) -> Pubkey {
-    todo!()
-}
-
 fn parse_pubkey(s: &str, label: &str) -> Result<Pubkey, String> {
-    todo!()
+    Pubkey::from_str(s).map_err(|e| format!("parse {label} pubkey error {e}"))
 }
 
 fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (Pubkey, u8) {
@@ -72,8 +69,8 @@ pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String>
 
     let program_id = parse_pubkey(&params.program_id, "program_id")?;
     let market = parse_pubkey(&params.market, "market")?;
-    let maker_owner = user_to_pubkey(&params.maker_user);
-    let taker_owner = user_to_pubkey(&params.taker_user);
+    let maker_owner = parse_pubkey(&params.maker_user, "maker_user")?;
+    let taker_owner = parse_pubkey(&params.taker_user, "taker_user")?;
 
     let (maker_vault, _) = derive_user_vault(&program_id, &market, &maker_owner);
     let (taker_vault, _) = derive_user_vault(&program_id, &market, &taker_owner);
