@@ -43,7 +43,8 @@ fn parse_pubkey(s: &str, label: &str) -> Result<Pubkey, String> {
 }
 
 fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (Pubkey, u8) {
-    todo!()
+    let seeds = &[b"user_vault", market.as_ref(), owner.as_ref()];
+    Pubkey::find_program_address(seeds, program_id)
 }
 
 struct SubmitParams {
