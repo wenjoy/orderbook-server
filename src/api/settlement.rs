@@ -9,6 +9,7 @@ use tokio::sync::RwLock;
 
 use crate::{
     api::settlement,
+    chain::{SubmitParams, submit_settle_trade},
     engine::order::{Side, Trade},
 };
 
@@ -57,8 +58,8 @@ impl SettlementMode {
 pub struct SettlementAccounts {
     authority: String,
     market: String,
-    maker: String,
-    taker: String,
+    maker_vault: String,
+    taker_vault: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -125,12 +126,12 @@ impl SettlementService {
             accounts: SettlementAccounts {
                 authority: self.config.authority_pubkey.clone(),
                 market: self.config.market_pubkey.clone(),
-                maker: placeholder_vault(
+                maker_vault: placeholder_vault(
                     &self.config.program_id,
                     &self.config.market_pubkey,
                     &trade.maker_user,
                 ),
-                taker: placeholder_vault(
+                taker_vault: placeholder_vault(
                     &self.config.program_id,
                     &self.config.market_pubkey,
                     &trade.taker_user,
@@ -161,7 +162,39 @@ impl SettlementService {
     }
 
     async fn submit_hot_wallet(&self, mut job: SettlementJob) -> SettlementJob {
-        todo!()
+        let config = &self.config;
+        let trade = &job.trade;
+        let taker_is_buy = matches!(trade.side, Side::Bid);
+
+        let params = SubmitParams {
+            program_id: config.program_id.clone(),
+            rpc_url: config.rpc_url.clone(),
+            market: config.market_pubkey.clone(),
+            maker_user: trade.maker_user.clone(),
+            taker_user: trade.taker_user.clone(),
+            price: trade.price,
+            quantity: trade.quantity,
+            taker_is_buy,
+        };
+        let result = submit_settle_trade(params);
+        job.updated_at_ms = now_ms();
+
+        match result {
+            Ok(res) => {
+                job.status = SettlementStatus::Confirmed;
+                job.signature = Some(res.signature);
+                job.accounts.authority = res.authority;
+                job.accounts.maker_vault = res.maker_vault;
+                job.accounts.taker_vault = res.taker_vault;
+                job.error = None;
+            }
+            Err(e) => {
+                job.status = SettlementStatus::Failed;
+                job.error = Some(format!("join: {e}"));
+                eprintln!("submit to hot wallet error {e}");
+            }
+        }
+        job
     }
 
     pub async fn enqueue_trades(&self, trades: &[Trade]) -> Vec<SettlementJob> {
@@ -222,7 +255,7 @@ fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
-fn pack_settle_trade(price: u64, quantity: u64, taker_is_buy: bool) -> Vec<u8> {
+pub fn pack_settle_trade(price: u64, quantity: u64, taker_is_buy: bool) -> Vec<u8> {
     let mut created = Vec::with_capacity(18);
     created.push(4);
     created.extend_from_slice(&price.to_le_bytes());

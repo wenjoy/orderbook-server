@@ -31,7 +31,7 @@ pub fn load_keypair() -> Result<Keypair, String> {
 fn keypair_from_json(data: &str) -> Result<Keypair, String> {
     let bytes: &[u8] =
         serde_json::from_str(data.trim()).map_err(|e| format!("parse keypari json error {}", e))?;
-    keypair_from_bytes(&bytes)
+    keypair_from_bytes(bytes)
 }
 
 fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
@@ -47,17 +47,18 @@ fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (P
     Pubkey::find_program_address(seeds, program_id)
 }
 
-struct SubmitParams {
-    program_id: String,
-    rpc_url: String,
-    market: String,
-    maker_user: String,
-    taker_user: String,
-    price: u64,
-    quantity: u64,
-    taker_is_buy: bool,
+pub struct SubmitParams {
+    pub program_id: String,
+    pub rpc_url: String,
+    pub market: String,
+    pub maker_user: String,
+    pub taker_user: String,
+    pub price: u64,
+    pub quantity: u64,
+    pub taker_is_buy: bool,
 }
-struct SubmitResult {
+
+pub struct SubmitResult {
     pub signature: String,
     pub maker_vault: String,
     pub taker_vault: String,
