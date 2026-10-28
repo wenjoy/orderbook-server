@@ -9,7 +9,6 @@ use tower_http::cors::CorsLayer;
 async fn main() {
     let state = AppState::new();
     let app = Router::new()
-        .route("/", get(|| async {}))
         .route("/orders", post(handlers::place_order))
         .route("/orders/{id}", delete(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))

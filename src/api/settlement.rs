@@ -7,7 +7,10 @@ use std::{
 use serde::Serialize;
 use tokio::sync::RwLock;
 
-use crate::engine::order::{Side, Trade};
+use crate::{
+    api::settlement,
+    engine::order::{Side, Trade},
+};
 
 #[derive(Clone, Serialize, Debug)]
 pub enum SettlementStatus {
@@ -145,17 +148,20 @@ impl SettlementService {
             }
             SettlementMode::Queue => {
                 //stay Pending
+                println!("job id: {}, settlement queued", job.id);
             }
             SettlementMode::HotWallet => {
-                job.status = SettlementStatus::Submitted;
-                job.signature = Some(format!("hot_wallet_sig_{}", job.id));
-                job.updated_at_ms = now_ms();
+                job = self.submit_hot_wallet(job).await;
             }
         }
 
         let mut map = self.jobs.write().await;
         map.insert(job.id, job.clone());
         job
+    }
+
+    async fn submit_hot_wallet(&self, mut job: SettlementJob) -> SettlementJob {
+        todo!()
     }
 
     pub async fn enqueue_trades(&self, trades: &[Trade]) -> Vec<SettlementJob> {
