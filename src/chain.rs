@@ -1,3 +1,5 @@
+use std::{env, fs};
+
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
     message::{AccountMeta, Instruction},
@@ -10,14 +12,19 @@ use solana_sdk::{
 use crate::api::settlement::pack_settle_trade;
 
 pub fn load_keypair() -> Result<Keypair, String> {
-    todo!()
+    if let Ok(path) = env::var("SETTLEMENT_KEYPAIR") {
+        let data = fs::read_to_string(path)
+            .map_err(|e| format!("read settlement keypair file error : {}", e))?;
+        return keypair_from_json(&data);
+    };
+
+    if let Ok(json) = env::var("SETTLEMENT_KEYPAIR_JSON") {
+        return keypair_from_json(&json);
+    }
+    Err("hot wallet require SETTLEMENT_KEYPAIR or SETTLEMENT_KEYPAIR_JSON".into())
 }
 
 fn keypair_from_json(data: &str) -> Result<Keypair, String> {
-    todo!()
-}
-
-fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
     todo!()
 }
 
