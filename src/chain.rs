@@ -35,7 +35,7 @@ fn keypair_from_bytes(bytes: &[u8]) -> Result<Keypair, String> {
 }
 
 fn parse_pubkey(s: &str, label: &str) -> Result<Pubkey, String> {
-    Pubkey::from_str(s).map_err(|e| format!("parse {label} pubkey error {e}"))
+    Pubkey::from_str(s).map_err(|e| format!("parse {label} pubkey error: {e}"))
 }
 
 fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (Pubkey, u8) {
