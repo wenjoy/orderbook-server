@@ -58,7 +58,7 @@ impl OrderBook {
             })
             .collect()
     }
-    pub fn add_order(&mut self, order: &Order) {
+    pub fn add_order_to_book(&mut self, order: &Order) {
         let price = order.price.expect("limit order must have price");
         let book = match order.side {
             Side::Bid => &mut self.bids,

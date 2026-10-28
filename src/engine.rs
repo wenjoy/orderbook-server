@@ -47,7 +47,7 @@ impl MatchingEngine {
                 OrderStatus::Open
             };
             // println!("add order {}", order.price.unwrap());
-            self.book.add_order(&order);
+            self.book.add_order_to_book(&order);
         } else if order.remaining() == 0 {
             order.status = OrderStatus::Filled;
         } else {
