@@ -16,6 +16,7 @@ use crate::{
         settlement::{SettlementJob, SettlementStatus},
         state::AppState,
     },
+    chain::{build_initialize_market, submit_instruction},
     engine::order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
     error::{ApiError, ApiResult},
     event::ServerEvent,
@@ -249,4 +250,43 @@ pub async fn settlement_config(
             SettlementStatus::Failed,
         ],
     })))
+}
+
+#[derive(Serialize)]
+pub struct InitMarketReq {
+    pub base_mint: String,
+    pub quote_mint: String,
+    pub authority: Option<String>,
+    #[serde(default = "default_false")]
+    pub submit: bool,
+}
+pub struct OnchainSubmitResult {
+    pub submitted: bool,
+    pub signature: Option<String>,
+    pub error: Option<String>,
+}
+pub async fn initialize_market(
+    State(state): State<AppState>,
+    Json(req): Json<InitMarketReq>,
+) -> ApiResult<Json<OnchainSubmitResult>> {
+    let authority = req
+        .authority
+        .unwrap_or(state.settlement.config.authority_pubkey);
+    let (ix, _) = build_initialize_market(
+        &state.settlement.config.program_id,
+        &authority,
+        &req.base_mint,
+        &req.quote_mint,
+    )
+    .map_err(|e| ApiError::BadRequest(format!("build instruction of market error: {e}")))?;
+
+    let rpc_url = &state.settlement.config.rpc_url;
+    let sig = submit_instruction(rpc_url, ix)
+        .map_err(|e| ApiError::BadRequest(format!("submit instruction error: {e}")))?;
+
+    Ok(Json(OnchainSubmitResult {
+        submitted: true,
+        signature: Some(sig),
+        error: None,
+    }))
 }
