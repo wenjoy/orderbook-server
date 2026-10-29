@@ -19,6 +19,10 @@ async fn main() {
             "/onchain/initialize-market",
             post(handlers::initialize_market),
         )
+        .route(
+            "/onchain/initialize-vault",
+            post(handlers::initialize_vault),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state);
 
