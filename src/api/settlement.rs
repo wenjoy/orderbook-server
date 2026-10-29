@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    env, marker,
+    env,
     sync::{Arc, atomic::AtomicU64},
 };
 
@@ -8,7 +8,6 @@ use serde::Serialize;
 use tokio::sync::RwLock;
 
 use crate::{
-    api::settlement,
     chain::{SubmitParams, submit_settle_trade},
     engine::order::{Side, Trade},
 };
