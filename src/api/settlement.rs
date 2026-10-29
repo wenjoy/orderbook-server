@@ -191,7 +191,7 @@ impl SettlementService {
             Err(e) => {
                 job.status = SettlementStatus::Failed;
                 job.error = Some(format!("join: {e}"));
-                eprintln!("submit to hot wallet error {e}");
+                eprintln!("submit to hot wallet error: {e}");
             }
         }
         job
