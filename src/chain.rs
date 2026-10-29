@@ -12,7 +12,7 @@ use solana_sdk::{
 
 use crate::api::settlement::pack_settle_trade;
 
-pub fn load_keypair() -> Result<Keypair, String> {
+pub fn load_settle_keypair() -> Result<Keypair, String> {
     if let Ok(path) = env::var("SETTLEMENT_KEYPAIR") {
         let data = fs::read_to_string(path)
             .map_err(|e| format!("read settlement keypair file error : {}", e))?;
@@ -67,7 +67,7 @@ pub struct SubmitResult {
 }
 
 pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String> {
-    let keypair = load_keypair()?;
+    let keypair = load_settle_keypair()?;
     let authority = keypair.pubkey();
 
     let program_id = parse_pubkey(&params.program_id, "program_id")?;
@@ -150,6 +150,21 @@ pub fn build_initialize_market(
     let built = BuiltInstruction {};
     Ok((ix, built))
 }
+pub fn submit_instruction(rpc_url: &str, ix: Instruction) -> Result<String, String> {
+    let keypair = load_settle_keypair()?;
+    let payer = keypair.pubkey();
+    let client = RpcClient::new(rpc_url);
+    let recent = client
+        .get_latest_blockhash()
+        .map_err(|e| format!("get recent error: {e}"))?;
+    //TODO:  check 要求热钱包公钥 == 指令里 is_signer 的账户之一
+    let signing_keypairs = &[keypair];
 
+    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer), signing_keypairs, recent);
+    let sig = client
+        .send_and_confirm_transaction(&tx)
+        .map_err(|e| format!("send tx error: {e}"))?;
+    Ok(sig.to_string())
+}
 #[cfg(test)]
 mod tests {}
