@@ -16,7 +16,7 @@ use crate::{
         settlement::{SettlementJob, SettlementStatus},
         state::AppState,
     },
-    chain::{build_initialize_market, submit_instruction},
+    chain::{build_initialize_market, build_initialize_vault, submit_instruction},
     engine::order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
     error::{ApiError, ApiResult},
     event::ServerEvent,
@@ -262,6 +262,29 @@ pub async fn initialize_market(
     )
     .map_err(|e| ApiError::BadRequest(format!("build instruction of market error: {e}")))?;
 
+    let rpc_url = &state.settlement.config.rpc_url;
+    let sig = submit_instruction(rpc_url, ix)
+        .map_err(|e| ApiError::BadRequest(format!("submit instruction error: {e}")))?;
+
+    Ok(Json(OnchainSubmitResult {
+        submitted: true,
+        signature: Some(sig),
+        error: None,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InitVaultReq {
+    pub owner: String,
+    pub market: String,
+}
+
+pub async fn initialize_vault(
+    State(state): State<AppState>,
+    Json(req): Json<InitVaultReq>,
+) -> ApiResult<Json<OnchainSubmitResult>> {
+    let ix = build_initialize_vault(&state.settlement.config.program_id, &req.owner, &req.market)
+        .map_err(|e| ApiError::BadRequest(format!("build init vault ix error: {e}")))?;
     let rpc_url = &state.settlement.config.rpc_url;
     let sig = submit_instruction(rpc_url, ix)
         .map_err(|e| ApiError::BadRequest(format!("submit instruction error: {e}")))?;
