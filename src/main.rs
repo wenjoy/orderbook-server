@@ -15,6 +15,10 @@ async fn main() {
         .route("/trades", get(handlers::get_recent_trades))
         .route("/settlements", get(handlers::list_settlements))
         .route("/ws", get(handlers::ws_handler))
+        .route(
+            "/onchain/initialize-market",
+            post(handlers::initialize_market),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state);
 

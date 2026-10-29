@@ -252,7 +252,11 @@ pub async fn settlement_config(
     })))
 }
 
-#[derive(Serialize)]
+fn default_false() -> bool {
+    false
+}
+
+#[derive(Deserialize)]
 pub struct InitMarketReq {
     pub base_mint: String,
     pub quote_mint: String,
@@ -260,11 +264,14 @@ pub struct InitMarketReq {
     #[serde(default = "default_false")]
     pub submit: bool,
 }
+#[derive(Serialize)]
 pub struct OnchainSubmitResult {
     pub submitted: bool,
     pub signature: Option<String>,
     pub error: Option<String>,
 }
+
+#[axum::debug_handler]
 pub async fn initialize_market(
     State(state): State<AppState>,
     Json(req): Json<InitMarketReq>,
