@@ -42,6 +42,10 @@ fn derive_user_vault(program_id: &Pubkey, market: &Pubkey, owner: &Pubkey) -> (P
     let seeds = &[b"user_vault", market.as_ref(), owner.as_ref()];
     Pubkey::find_program_address(seeds, program_id)
 }
+fn derive_market(program_id: &Pubkey, base_mint: &Pubkey, quote_mint: &Pubkey) -> (Pubkey, u8) {
+    let seeds = &[b"market", base_mint.as_ref(), quote_mint.as_ref()];
+    Pubkey::find_program_address(seeds, program_id)
+}
 
 pub struct SubmitParams {
     pub program_id: String,
@@ -98,6 +102,34 @@ pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String>
         maker_vault: maker_vault.to_string(),
         taker_vault: taker_vault.to_string(),
     })
+}
+
+struct AccountMetaJson {
+    pub pubkey: String,
+    pub is_signer: bool,
+    pub is_writable: bool,
+}
+struct BuiltInstruction {
+    pub name: String,
+    pub program_id: String,
+    pub ix_data_hex: String,
+    pub accounts: Vec<AccountMetaJson>,
+    pub pdas: serde_json::Value,
+    pub required_signer: String,
+}
+pub fn build_initialize_market(
+    program_id: &str,
+    authority: &str,
+    base_mint: &str,
+    quote_mint: &str,
+) -> Result<(Instruction, BuiltInstruction), String> {
+    let program_id = parse_pubkey(program_id, "program_id")?;
+    let authority = parse_pubkey(authority, "authority")?;
+    let base_mint = parse_pubkey(base_mint, "base_mint")?;
+    let quote_mint = parse_pubkey(quote_mint, "quote_mint")?;
+
+    let market = derive_market();
+    Ok(())
 }
 
 #[cfg(test)]
