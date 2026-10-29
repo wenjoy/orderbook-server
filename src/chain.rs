@@ -122,6 +122,9 @@ pub struct BuiltInstruction {
 fn pack_initialize_market() -> Vec<u8> {
     vec![0]
 }
+fn pack_initialize_vault() -> Vec<u8> {
+    vec![1]
+}
 pub fn build_initialize_market(
     program_id: &str,
     authority: &str,
@@ -149,6 +152,29 @@ pub fn build_initialize_market(
     //TODO: implement if necessary
     let built = BuiltInstruction {};
     Ok((ix, built))
+}
+pub fn build_initialize_vault(
+    program_id: &str,
+    owner: &str,
+    market: &str,
+) -> Result<Instruction, String> {
+    let program_id = parse_pubkey(program_id, "program_id")?;
+    let owner = parse_pubkey(owner, "owner")?;
+    let market = parse_pubkey(market, "market")?;
+    let (user_vault, _) = derive_user_vault(&program_id, &market, &owner);
+
+    let ix = Instruction {
+        program_id,
+        data: pack_initialize_vault(),
+        accounts: vec![
+            AccountMeta::new(owner, true),
+            AccountMeta::new(user_vault, false),
+            AccountMeta::new_readonly(market, false),
+            AccountMeta::new_readonly(system_program::id(), false),
+        ],
+    };
+
+    Ok(ix)
 }
 pub fn submit_instruction(rpc_url: &str, ix: Instruction) -> Result<String, String> {
     let keypair = load_settle_keypair()?;
