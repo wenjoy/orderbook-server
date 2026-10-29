@@ -1,6 +1,7 @@
 use std::{env, fs, str::FromStr};
 
 use solana_client::rpc_client::RpcClient;
+use solana_program::example_mocks::solana_sdk::system_program;
 use solana_sdk::{
     message::{AccountMeta, Instruction},
     pubkey::Pubkey,
@@ -109,13 +110,17 @@ struct AccountMetaJson {
     pub is_signer: bool,
     pub is_writable: bool,
 }
-struct BuiltInstruction {
-    pub name: String,
-    pub program_id: String,
-    pub ix_data_hex: String,
-    pub accounts: Vec<AccountMetaJson>,
-    pub pdas: serde_json::Value,
-    pub required_signer: String,
+//TODO: may not necessary
+pub struct BuiltInstruction {
+    // pub name: String,
+    // pub program_id: String,
+    // pub ix_data_hex: String,
+    // pub accounts: Vec<AccountMetaJson>,
+    // pub pdas: serde_json::Value,
+    // pub required_signer: String,
+}
+fn pack_initialize_market() -> Vec<u8> {
+    vec![0]
 }
 pub fn build_initialize_market(
     program_id: &str,
@@ -128,8 +133,22 @@ pub fn build_initialize_market(
     let base_mint = parse_pubkey(base_mint, "base_mint")?;
     let quote_mint = parse_pubkey(quote_mint, "quote_mint")?;
 
-    let market = derive_market();
-    Ok(())
+    let (market, _) = derive_market(&program_id, &base_mint, &quote_mint);
+
+    let ix = Instruction {
+        program_id,
+        data: pack_initialize_market(),
+        accounts: vec![
+            AccountMeta::new(authority, true),
+            AccountMeta::new(market, false),
+            AccountMeta::new_readonly(base_mint, false),
+            AccountMeta::new_readonly(quote_mint, false),
+            AccountMeta::new_readonly(system_program::id(), false),
+        ],
+    };
+    //TODO: implement if necessary
+    let built = BuiltInstruction {};
+    Ok((ix, built))
 }
 
 #[cfg(test)]
