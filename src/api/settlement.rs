@@ -12,6 +12,10 @@ use crate::{
     engine::order::{Side, Trade},
 };
 
+//TODO:not hardcode this
+const AUTHORITY: &str = "";
+const MARKET: &str = "";
+
 #[derive(Clone, Serialize, Debug)]
 pub enum SettlementStatus {
     Pending,
@@ -65,28 +69,15 @@ pub struct SettlementAccounts {
 pub struct SettlementConfig {
     pub mode: SettlementMode,
     pub program_id: String,
-    pub market_pubkey: String,
-    pub authority_pubkey: String,
     pub rpc_url: String,
-    pub base_mint: String,
-    pub quote_mint: String,
 }
 impl SettlementConfig {
     fn from_env() -> Self {
         let mode = SettlementMode::from_env();
         Self {
             mode,
-            program_id: env::var("SETTLEMENT_PROGRAM_ID")
-                .unwrap_or("Settlement11111111111111111111111111111111".into()),
-            market_pubkey: env::var("SETTLEMENT_MARKET")
-                .unwrap_or_else(|_| "Market1111111111111111111111111111111111111".into()),
-            authority_pubkey: env::var("SETTLEMENT_AUTHORITY")
-                .unwrap_or_else(|_| "Authority111111111111111111111111111111111".into()),
-            rpc_url: env::var("SOLANA_RPC_URL").unwrap_or_else(|_| "http://127.0.0.1:8899".into()),
-            base_mint: env::var("BASE_MINT")
-                .unwrap_or_else(|_| "BaseMint11111111111111111111111111111111111".into()),
-            quote_mint: env::var("QUOTE_MINT")
-                .unwrap_or_else(|_| "QuoteMint111111111111111111111111111111111".into()),
+            program_id: env::var("SETTLEMENT_PROGRAM_ID").unwrap(),
+            rpc_url: env::var("SOLANA_RPC_URL").unwrap(),
         }
     }
 }
@@ -123,18 +114,10 @@ impl SettlementService {
             created_at_ms: ts,
             updated_at_ms: ts,
             accounts: SettlementAccounts {
-                authority: self.config.authority_pubkey.clone(),
-                market: self.config.market_pubkey.clone(),
-                maker_vault: placeholder_vault(
-                    &self.config.program_id,
-                    &self.config.market_pubkey,
-                    &trade.maker_user,
-                ),
-                taker_vault: placeholder_vault(
-                    &self.config.program_id,
-                    &self.config.market_pubkey,
-                    &trade.taker_user,
-                ),
+                authority: AUTHORITY.to_string(),
+                market: MARKET.to_string(),
+                maker_vault: placeholder_vault(&self.config.program_id, MARKET, &trade.maker_user),
+                taker_vault: placeholder_vault(&self.config.program_id, MARKET, &trade.taker_user),
             },
         }
     }
@@ -168,7 +151,7 @@ impl SettlementService {
         let params = SubmitParams {
             program_id: config.program_id.clone(),
             rpc_url: config.rpc_url.clone(),
-            market: config.market_pubkey.clone(),
+            market: MARKET.to_string(),
             maker_user: trade.maker_user.clone(),
             taker_user: trade.taker_user.clone(),
             price: trade.price,

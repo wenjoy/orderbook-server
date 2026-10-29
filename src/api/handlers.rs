@@ -229,29 +229,6 @@ pub async fn confirm_settlement(
     Ok(Json(job))
 }
 
-pub async fn settlement_config(
-    State(state): State<AppState>,
-) -> ApiResult<Json<serde_json::Value>> {
-    let c = state.settlement.config;
-
-    Ok(Json(serde_json::json!({
-        "mode": c.mode,
-        "program_id": c.program_id,
-        "market_pubkey": c.market_pubkey,
-        "authority_pubkey": c.authority_pubkey,
-        "rpc_url": c.rpc_url,
-        "base_mint": c.base_mint,
-        "quote_mint": c.quote_mint,
-        "statuses": [
-            SettlementStatus::Pending,
-            SettlementStatus::Simulated,
-            SettlementStatus::Submitted,
-            SettlementStatus::Confirmed,
-            SettlementStatus::Failed,
-        ],
-    })))
-}
-
 fn default_false() -> bool {
     false
 }
@@ -276,9 +253,7 @@ pub async fn initialize_market(
     State(state): State<AppState>,
     Json(req): Json<InitMarketReq>,
 ) -> ApiResult<Json<OnchainSubmitResult>> {
-    let authority = req
-        .authority
-        .unwrap_or(state.settlement.config.authority_pubkey);
+    let authority = req.authority.unwrap();
     let (ix, _) = build_initialize_market(
         &state.settlement.config.program_id,
         &authority,
