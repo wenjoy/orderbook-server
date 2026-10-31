@@ -12,10 +12,6 @@ use crate::{
     engine::order::{Side, Trade},
 };
 
-//TODO:not hardcode this
-const AUTHORITY: &str = "";
-const MARKET: &str = "";
-
 #[derive(Clone, Serialize, Debug)]
 pub enum SettlementStatus {
     Pending,

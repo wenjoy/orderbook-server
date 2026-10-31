@@ -28,6 +28,7 @@ pub struct PlaceOrderRequst {
     pub price: Option<u64>,
     pub quantity: u64,
     pub user: String,
+    pub market: String,
 }
 
 #[axum::debug_handler]
@@ -44,6 +45,7 @@ pub async fn place_order(
         filled_quantity: 0,
         status: OrderStatus::Open,
         timestamp: chrono::Utc::now(),
+        market: req.market,
     };
 
     let mut engine = state.engine.write().await;
