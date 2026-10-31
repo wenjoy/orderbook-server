@@ -31,7 +31,6 @@ pub struct SettlementJob {
     pub status: SettlementStatus,
     pub trade: Trade,
     pub ix_data_hex: String,
-    pub accounts: SettlementAccounts,
     pub signature: Option<String>,
     pub error: Option<String>,
     pub created_at_ms: u64,
@@ -113,17 +112,12 @@ impl SettlementService {
             error: None,
             created_at_ms: ts,
             updated_at_ms: ts,
-            accounts: SettlementAccounts {
-                authority: AUTHORITY.to_string(),
-                market: MARKET.to_string(),
-                maker_vault: placeholder_vault(&self.config.program_id, MARKET, &trade.maker_user),
-                taker_vault: placeholder_vault(&self.config.program_id, MARKET, &trade.taker_user),
-            },
         }
     }
 
     async fn process_job(&self, mut job: SettlementJob) -> SettlementJob {
         match self.config.mode {
+            //TODO: get rid of DryRun
             SettlementMode::DryRun => {
                 job.status = SettlementStatus::Simulated;
                 job.signature = Some(format!("dry_run_sig_{}", job.id));
@@ -151,7 +145,7 @@ impl SettlementService {
         let params = SubmitParams {
             program_id: config.program_id.clone(),
             rpc_url: config.rpc_url.clone(),
-            market: MARKET.to_string(),
+            market: trade.market.to_string(),
             maker_user: trade.maker_user.clone(),
             taker_user: trade.taker_user.clone(),
             price: trade.price,
@@ -165,9 +159,6 @@ impl SettlementService {
             Ok(res) => {
                 job.status = SettlementStatus::Confirmed;
                 job.signature = Some(res.signature);
-                job.accounts.authority = res.authority;
-                job.accounts.maker_vault = res.maker_vault;
-                job.accounts.taker_vault = res.taker_vault;
                 job.error = None;
             }
             Err(e) => {

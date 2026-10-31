@@ -93,6 +93,7 @@ impl MatchingEngine {
                     timestamp: chrono::Utc::now(),
                     taker_user: taker.user.clone(),
                     maker_user: maker.user.clone(),
+                    market: taker.market.clone(),
                 });
                 taker.filled_quantity += traded;
                 maker.filled_quantity += traded;
@@ -152,8 +153,9 @@ impl MatchingEngine {
                     quantity: traded,
                     id: Uuid::new_v4(),
                     timestamp: chrono::Utc::now(),
-                    taker_user: "taker_todo".into(),
-                    maker_user: "maker_todo".into(),
+                    taker_user: taker.user.clone(),
+                    maker_user: maker.user.clone(),
+                    market: taker.market.clone(),
                 });
                 taker.filled_quantity += traded;
                 maker.filled_quantity += traded;

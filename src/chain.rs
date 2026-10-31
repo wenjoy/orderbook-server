@@ -48,6 +48,7 @@ fn derive_market(program_id: &Pubkey, base_mint: &Pubkey, quote_mint: &Pubkey) -
     Pubkey::find_program_address(seeds, program_id)
 }
 
+#[derive(Debug)]
 pub struct SubmitParams {
     pub program_id: String,
     pub rpc_url: String,
@@ -67,6 +68,7 @@ pub struct SubmitResult {
 }
 
 pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String> {
+    println!("{:?}", params);
     let keypair = load_settle_keypair()?;
     let authority = keypair.pubkey();
 
@@ -137,6 +139,7 @@ pub fn build_initialize_market(
     let quote_mint = parse_pubkey(quote_mint, "quote_mint")?;
 
     let (market, _) = derive_market(&program_id, &base_mint, &quote_mint);
+    println!("market pda: {}", market);
 
     let ix = Instruction {
         program_id,

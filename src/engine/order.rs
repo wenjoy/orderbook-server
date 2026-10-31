@@ -18,6 +18,7 @@ pub struct Order {
     pub user: String,
     pub filled_quantity: u64,
     pub status: OrderStatus,
+    pub market: String,
 }
 
 impl Order {
@@ -52,6 +53,7 @@ pub struct Trade {
     pub side: Side, // taker 的方向
     pub taker_user: String,
     pub maker_user: String,
+    pub market: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
