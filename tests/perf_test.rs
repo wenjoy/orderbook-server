@@ -12,6 +12,7 @@ fn test_matching_throughput() {
     for i in 0..1000 {
         let order = Order {
             id: Uuid::new_v4(),
+            market: "market".into(),
             side: Side::Ask,
             user: "limit".into(),
             price: Some(100 + (i % 10) as u64),
@@ -28,6 +29,7 @@ fn test_matching_throughput() {
 
     for _ in 0..iterations {
         let buy = Order {
+            market: "market".into(),
             id: Uuid::new_v4(),
             side: Side::Bid,
             user: "limit".into(),
