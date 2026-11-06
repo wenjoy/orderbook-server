@@ -17,4 +17,6 @@ tower-http = { version = "0.5", features = ["cors"] }
 solana-sdk = "4.1"
 solana-client= "4.3"
 solana-program= "4.1"
+dotenv = "0.15.0"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres"] }
 

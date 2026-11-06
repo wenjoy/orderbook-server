@@ -3,7 +3,8 @@ use crate::{
     engine::{self, MatchingEngine, book::OrderBook, order::Trade},
     event::ServerEvent,
 };
-use std::{collections::VecDeque, sync::Arc};
+use sqlx::PgPool;
+use std::{collections::VecDeque, env, sync::Arc};
 use tokio::sync::{RwLock, broadcast};
 
 pub type SharedEngine = Arc<RwLock<MatchingEngine>>;
@@ -16,15 +17,21 @@ pub struct AppState {
     pub recent_trades: Arc<RwLock<VecDeque<Trade>>>,
     pub tx: broadcast::Sender<ServerEvent>,
     pub settlement: SettlementService,
+    pub pool: PgPool,
 }
 impl AppState {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
+        dotenv::dotenv().expect("load env config failed");
+        let database_url = env::var("DATABASE_URL").expect("databse no config");
         let (tx, _) = broadcast::channel(1024);
         Self {
             engine: Arc::new(RwLock::new(MatchingEngine::new())),
             tx,
             recent_trades: Arc::new(RwLock::new(VecDeque::with_capacity(MAX_RECENT_TRADES))),
             settlement: SettlementService::from_env(),
+            pool: sqlx::postgres::PgPool::connect(&database_url)
+                .await
+                .expect("connect to database error"),
         }
     }
 
@@ -56,11 +63,5 @@ impl AppState {
         }
 
         let jobs = self.settlement.enqueue_trades(trades).await;
-    }
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self::new()
     }
 }
