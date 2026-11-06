@@ -68,7 +68,7 @@ pub struct SubmitResult {
 }
 
 pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String> {
-    println!("{:?}", params);
+    // println!("{:?}", params);
     let keypair = load_settle_keypair()?;
     let authority = keypair.pubkey();
 
@@ -180,6 +180,7 @@ pub fn build_initialize_vault(
     Ok(ix)
 }
 pub fn submit_instruction(rpc_url: &str, ix: Instruction) -> Result<String, String> {
+    //TODO: shouldn't load keypair
     let keypair = load_settle_keypair()?;
     let payer = keypair.pubkey();
     let client = RpcClient::new(rpc_url);

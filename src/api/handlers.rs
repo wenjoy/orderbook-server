@@ -240,8 +240,6 @@ pub struct InitMarketReq {
     pub base_mint: String,
     pub quote_mint: String,
     pub authority: Option<String>,
-    #[serde(default = "default_false")]
-    pub submit: bool,
 }
 #[derive(Serialize)]
 pub struct OnchainSubmitResult {
@@ -255,6 +253,7 @@ pub async fn initialize_market(
     State(state): State<AppState>,
     Json(req): Json<InitMarketReq>,
 ) -> ApiResult<Json<OnchainSubmitResult>> {
+    //TODO: no need to pass into authority
     let authority = req.authority.unwrap();
     let (ix, _) = build_initialize_market(
         &state.settlement.config.program_id,
