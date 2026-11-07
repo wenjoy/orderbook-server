@@ -296,3 +296,29 @@ pub async fn initialize_vault(
         error: None,
     }))
 }
+
+#[derive(Debug, Serialize)]
+pub struct GetMarketsResult {
+    id: i64,
+    symbol: String,
+    base_symbol: String,
+    quote_symbol: String,
+    base_mint: String,
+    quote_mint: String,
+}
+pub async fn get_markets(State(state): State<AppState>) -> ApiResult<Json<Vec<GetMarketsResult>>> {
+    let pool = state.pool;
+    let res = sqlx::query_as!(
+        GetMarketsResult,
+        r#"
+        select * from markets;
+        "#
+    )
+    .fetch_all(&pool)
+    .await;
+
+    match res {
+        Ok(data) => Ok(Json(data)),
+        Err(_) => Err(ApiError::NotFound("no markets exists".into())),
+    }
+}

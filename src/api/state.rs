@@ -1,6 +1,6 @@
 use crate::{
     api::settlement::SettlementService,
-    engine::{self, MatchingEngine, book::OrderBook, order::Trade},
+    engine::{MatchingEngine, order::Trade},
     event::ServerEvent,
 };
 use sqlx::PgPool;

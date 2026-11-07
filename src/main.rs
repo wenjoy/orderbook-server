@@ -7,13 +7,14 @@ use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
-    let state = AppState::new();
-    let app = Router::new()
+    let state = AppState::new().await;
+    let app = Router::<AppState>::new()
         .route("/orders", post(handlers::place_order))
         .route("/orders/{id}", delete(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/trades", get(handlers::get_recent_trades))
         .route("/settlements", get(handlers::list_settlements))
+        .route("/markets", get(handlers::get_markets))
         .route("/ws", get(handlers::ws_handler))
         .route(
             "/onchain/initialize-market",
