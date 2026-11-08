@@ -59,6 +59,24 @@ impl MatchingEngine {
         Ok((order, new_trades))
     }
 
+    pub fn open_orders(&self, user_filer: Option<&str>) -> Vec<Order> {
+        let mut out = Vec::new();
+        for (_, price_level) in self.book.asks.iter().chain(self.book.bids.iter()) {
+            for order in price_level.orders.iter() {
+                if order.remaining() == 0 {
+                    continue;
+                }
+
+                if let Some(u) = user_filer {
+                    if u == order.user {
+                        out.push(order.clone());
+                    }
+                }
+            }
+        }
+        out
+    }
+
     fn match_ask(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
         while taker.remaining() > 0 {
             let Some(best_bid_price) = self.book.best_bid() else {
