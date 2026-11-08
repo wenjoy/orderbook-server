@@ -63,5 +63,14 @@ impl AppState {
         }
 
         let jobs = self.settlement.enqueue_trades(trades).await;
+        for job in jobs {
+            self.broadcast(ServerEvent::SettlementUpdate {
+                settlement_id: job.id,
+                status: job.status,
+                signature: job.signature,
+                trade_price: job.trade.price,
+                trade_quantity: job.trade.quantity,
+            });
+        }
     }
 }
