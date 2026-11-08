@@ -9,7 +9,10 @@ use tower_http::cors::CorsLayer;
 async fn main() {
     let state = AppState::new().await;
     let app = Router::<AppState>::new()
-        .route("/orders", post(handlers::place_order))
+        .route(
+            "/orders",
+            get(handlers::list_orders).post(handlers::place_order),
+        )
         .route("/orders/{id}", delete(handlers::cancel_order))
         .route("/orderbook", get(handlers::get_orderbook))
         .route("/trades", get(handlers::get_recent_trades))
