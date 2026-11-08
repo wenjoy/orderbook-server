@@ -126,7 +126,10 @@ pub async fn cancel_order(
             state.broadcast_orderbook().await;
             Ok(Json(order))
         }
-        Err(_) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            eprintln!("cancel order failed {:?}", e);
+            Err(StatusCode::NOT_FOUND)
+        }
     }
 }
 
