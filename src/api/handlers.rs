@@ -31,6 +31,22 @@ pub struct PlaceOrderRequst {
     pub market: String,
 }
 
+#[derive(Deserialize)]
+pub struct ListOrderRequest {
+    user: Option<String>,
+}
+#[axum::debug_handler]
+pub async fn list_orders(
+    State(state): State<AppState>,
+    Query(req): Query<ListOrderRequest>,
+) -> Result<Json<Vec<Order>>, StatusCode> {
+    let user_filter = req.user.as_deref();
+    let engine = state.engine.read().await;
+    let open_orders = engine.open_orders(user_filter);
+
+    Ok(Json(open_orders))
+}
+
 #[axum::debug_handler]
 pub async fn place_order(
     State(state): State<AppState>,
