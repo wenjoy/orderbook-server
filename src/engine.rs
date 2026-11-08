@@ -63,7 +63,6 @@ impl MatchingEngine {
 
     pub fn open_orders(&self, user_filter: Option<&str>) -> Vec<Order> {
         let mut out = Vec::new();
-        println!("debug {}", self.book.bids.len() + self.book.asks.len());
         for (_, price_level) in self.book.asks.iter().chain(self.book.bids.iter()) {
             for order in price_level.orders.iter() {
                 if order.status != Open {

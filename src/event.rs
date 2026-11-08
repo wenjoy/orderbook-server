@@ -1,8 +1,9 @@
 use serde::Serialize;
+use uuid::Uuid;
 
 use crate::{
     api::settlement::SettlementStatus,
-    engine::order::{DepthLevel, Order, OrderBookSnapshot, Side, Trade},
+    engine::order::{DepthLevel, OrderBookSnapshot, Side, Trade},
 };
 
 #[derive(Debug, Serialize, Clone)]
@@ -19,8 +20,9 @@ pub enum ServerEvent {
         timestamp: i64,
     },
     Trade(Trade),
-    //TODO: deprecated
-    OrderUpdate(Order),
+    OrderCancelled {
+        order_id: Uuid,
+    },
     OrderbookUpdate {
         bids: Vec<DepthLevel>,
         asks: Vec<DepthLevel>,

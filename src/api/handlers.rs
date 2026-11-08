@@ -119,7 +119,13 @@ pub async fn cancel_order(
     let mut engine = state.engine.write().await;
 
     match engine.cancel_order(order_id) {
-        Ok(order) => Ok(Json(order)),
+        Ok(order) => {
+            drop(engine);
+            let event = ServerEvent::OrderCancelled { order_id: order.id };
+            state.broadcast(event);
+            state.broadcast_orderbook().await;
+            Ok(Json(order))
+        }
         Err(_) => Err(StatusCode::NOT_FOUND),
     }
 }
