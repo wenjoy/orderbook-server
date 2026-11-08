@@ -35,14 +35,33 @@ pub struct PlaceOrderRequst {
 pub struct ListOrderRequest {
     user: Option<String>,
 }
+
+#[derive(Serialize)]
+pub struct ListOrderResponse {
+    id: Uuid,
+    side: Side,
+    price: u64,
+    user: String,
+    remaining: u64,
+}
 #[axum::debug_handler]
 pub async fn list_orders(
     State(state): State<AppState>,
     Query(req): Query<ListOrderRequest>,
-) -> Result<Json<Vec<Order>>, StatusCode> {
+) -> Result<Json<Vec<ListOrderResponse>>, StatusCode> {
     let user_filter = req.user.as_deref();
     let engine = state.engine.read().await;
-    let open_orders = engine.open_orders(user_filter);
+    let open_orders = engine
+        .open_orders(user_filter)
+        .iter()
+        .map(|o| ListOrderResponse {
+            id: o.id,
+            price: o.price.unwrap_or_default(),
+            side: o.side.clone(),
+            user: o.user.clone(),
+            remaining: o.remaining(),
+        })
+        .collect();
 
     Ok(Json(open_orders))
 }
