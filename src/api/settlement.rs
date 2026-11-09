@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, atomic::AtomicU64},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     engine::order::{Side, Trade},
 };
 
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Serialize, Debug, Deserialize)]
 pub enum SettlementStatus {
     Pending,
     Simulated,
@@ -21,7 +21,7 @@ pub enum SettlementStatus {
     Failed,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SettlementJob {
     pub id: u64,
     pub status: SettlementStatus,

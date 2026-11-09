@@ -3,3 +3,4 @@ pub mod chain;
 pub mod engine;
 pub mod error;
 pub mod event;
+pub mod persist;
