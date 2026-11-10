@@ -25,6 +25,7 @@ pub struct OrderBook {
     pub asks: BTreeMap<u64, PriceLevel>,
     pub order_index: std::collections::HashMap<Uuid, (Side, u64)>, // order_id -> (side, price)
     pub sequence: u64,
+    //TODO: next_order_id
 }
 
 impl OrderBook {

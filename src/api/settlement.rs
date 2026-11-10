@@ -216,6 +216,15 @@ impl SettlementService {
         }
         Ok(job.clone())
     }
+
+    pub async fn load_snapshot(&self, jobs: Vec<SettlementJob>) {
+        //TODO: handle next id
+        let mut map = self.jobs.write().await;
+        map.clear();
+        for j in jobs {
+            map.insert(j.id, j);
+        }
+    }
 }
 fn now_ms() -> u64 {
     std::time::SystemTime::now()

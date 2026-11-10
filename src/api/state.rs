@@ -1,7 +1,8 @@
 use crate::{
     api::settlement::SettlementService,
-    engine::{MatchingEngine, order::Trade},
+    engine::{MatchingEngine, book::OrderBook, order::Trade},
     event::ServerEvent,
+    persist,
 };
 use sqlx::PgPool;
 use std::{collections::VecDeque, env, sync::Arc};
@@ -71,6 +72,32 @@ impl AppState {
                 trade_price: job.trade.price,
                 trade_quantity: job.trade.quantity,
             });
+        }
+    }
+
+    pub async fn load_persisted() -> Self {
+        dotenv::dotenv().expect("load env config failed");
+        let database_url = env::var("DATABASE_URL").expect("databse no config");
+        let snap = persist::load().await;
+        let mut engine = MatchingEngine::new();
+        engine.restore_order(&snap);
+        let mut recent = VecDeque::with_capacity(MAX_RECENT_TRADES);
+        for t in snap.recent_trades.iter().take(MAX_RECENT_TRADES) {
+            recent.push_back(t.clone());
+        }
+
+        let settlement = SettlementService::from_env();
+        settlement.load_snapshot(snap.settlements).await;
+        let (tx, _) = broadcast::channel(1024);
+
+        Self {
+            tx,
+            engine: Arc::new(RwLock::new(engine)),
+            recent_trades: Arc::new(RwLock::new(recent)),
+            settlement,
+            pool: sqlx::postgres::PgPool::connect(&database_url)
+                .await
+                .expect("connect to database error"),
         }
     }
 }

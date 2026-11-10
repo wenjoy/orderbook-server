@@ -5,7 +5,7 @@ use book::OrderBook;
 use order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade};
 use uuid::Uuid;
 
-use crate::engine::order::OrderStatus::Open;
+use crate::{engine::order::OrderStatus::Open, persist::Snapshot};
 
 #[derive(Debug)]
 pub enum EngineError {
@@ -48,7 +48,6 @@ impl MatchingEngine {
             } else {
                 OrderStatus::Open
             };
-            // println!("add order {}", order.price.unwrap());
             self.book.add_order_to_book(&order);
         } else if order.remaining() == 0 {
             order.status = OrderStatus::Filled;
@@ -56,7 +55,6 @@ impl MatchingEngine {
             order.status = OrderStatus::PartiallyFilled;
         }
 
-        // dbg!(&order);
         self.trades.extend(new_trades.clone());
         Ok((order, new_trades))
     }
@@ -211,5 +209,14 @@ impl MatchingEngine {
 
         order.status = OrderStatus::Cancelled;
         Ok(order)
+    }
+
+    pub fn restore_order(&mut self, snap: &Snapshot) {
+        for o in &snap.open_orders {
+            if !o.is_active() {
+                return;
+            }
+            self.book.add_order_to_book(o);
+        }
     }
 }

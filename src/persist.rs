@@ -6,7 +6,10 @@ use uuid::Uuid;
 
 use crate::{
     api::settlement::SettlementJob,
-    engine::order::{Order, OrderStatus, Side, Trade},
+    engine::{
+        book::OrderBook,
+        order::{Order, OrderStatus, Side, Trade},
+    },
 };
 
 #[derive(Default)]
@@ -298,3 +301,5 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
     tx.commit().await?;
     Ok(())
 }
+
+pub fn apply_to_book(book: &mut OrderBook, snap: &Snapshot) {}
