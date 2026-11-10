@@ -53,18 +53,18 @@ pub async fn pool() -> Option<&'static PgPool> {
 
 pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
     for stmt in [
-        r#"create table if not exists engine_meta (key text not null primary key, value bigint not null) "#,
+        r#"create table if not exists engine_meta (key text not null primary key, value bigint not null)"#,
         r#"create table if not exists open_orders (
-            id bigint primary key ,
+            id bigint primary key,
             side text not null,
             price bigint not null,
             quantity bigint not null,
             filled_quantity bigint not null,
-            user text not null,
+            user_wallet text not null,
             status text not null,
             market text not null,
-            timestamp bigint not null,
-            ) "#,
+            timestamp bigint not null
+            )"#,
         r#"create table if not exists recent_trades (
             seq bigserial primary key ,
             taker_order_id text not null,
@@ -74,11 +74,11 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
             taker_side text not null,
             taker_user text not null,
             maker_user text not null,
-            market text not null,
+            market text not null
             ) "#,
         r#"create table if not exists settlements (
             id bigint primary key ,
-            payload jsonb not null,
+            payload jsonb not null
             ) "#,
     ] {
         sqlx::query(stmt).execute(pool).await?;
