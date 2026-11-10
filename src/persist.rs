@@ -1,11 +1,11 @@
-use std::env;
+use std::{collections::VecDeque, env};
 
 use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 use crate::{
-    api::settlement::SettlementJob,
+    api::settlement::{SettlementJob, SettlementService},
     engine::{
         book::OrderBook,
         order::{Order, OrderStatus, Side, Trade},
@@ -302,4 +302,30 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
     Ok(())
 }
 
-pub fn apply_to_book(book: &mut OrderBook, snap: &Snapshot) {}
+async fn capture(
+    book: &OrderBook,
+    recent: &VecDeque<Trade>,
+    settlement: &SettlementService,
+) -> Snapshot {
+    let (next_settlement_id, settlements) = settlement.snapshot_state().await;
+
+    Snapshot {
+        next_order_id: book.next_order_id(),
+        next_settlement_id,
+        open_orders: book.open_orders(None),
+        recent_trades: recent.iter().cloned().collect(),
+        settlements,
+    }
+}
+
+pub async fn persist_now(
+    book: &OrderBook,
+    recent: &VecDeque<Trade>,
+    settlement: &SettlementService,
+) {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let snap = capture();
+}

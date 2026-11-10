@@ -60,23 +60,7 @@ impl MatchingEngine {
     }
 
     pub fn open_orders(&self, user_filter: Option<&str>) -> Vec<Order> {
-        let mut out = Vec::new();
-        for (_, price_level) in self.book.asks.iter().chain(self.book.bids.iter()) {
-            for order in price_level.orders.iter() {
-                if order.status != Open {
-                    continue;
-                }
-
-                if let Some(u) = user_filter {
-                    if u == order.user {
-                        out.push(order.clone());
-                    }
-                } else {
-                    out.push(order.clone());
-                };
-            }
-        }
-        out
+        self.book.open_orders(user_filter)
     }
 
     fn match_ask(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {

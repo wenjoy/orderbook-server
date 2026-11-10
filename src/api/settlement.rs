@@ -225,6 +225,14 @@ impl SettlementService {
             map.insert(j.id, j);
         }
     }
+
+    pub async fn snapshot_state(&self) -> (u64, Vec<SettlementJob>) {
+        //TODO:replace with real next
+        let next = 1;
+        let map = self.jobs.read().await;
+        let jobs = map.values().cloned().collect();
+        (next, jobs)
+    }
 }
 fn now_ms() -> u64 {
     std::time::SystemTime::now()

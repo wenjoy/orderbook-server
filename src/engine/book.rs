@@ -5,6 +5,8 @@ use std::{
 
 use uuid::Uuid;
 
+use crate::engine::order::OrderStatus::Open;
+
 use super::order::{DepthLevel, Order, OrderBookSnapshot, Side};
 
 #[derive(Clone, Default)]
@@ -125,5 +127,28 @@ impl OrderBook {
             asks,
             sequence: self.sequence,
         }
+    }
+    pub fn next_order_id(&self) -> u64 {
+        //TODO: replace with real id
+        666
+    }
+    pub fn open_orders(&self, user_filter: Option<&str>) -> Vec<Order> {
+        let mut out = Vec::new();
+        for (_, price_level) in self.asks.iter().chain(self.bids.iter()) {
+            for order in price_level.orders.iter() {
+                if order.status != Open {
+                    continue;
+                }
+
+                if let Some(u) = user_filter {
+                    if u == order.user {
+                        out.push(order.clone());
+                    }
+                } else {
+                    out.push(order.clone());
+                };
+            }
+        }
+        out
     }
 }
