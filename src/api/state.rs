@@ -100,4 +100,10 @@ impl AppState {
                 .expect("connect to database error"),
         }
     }
+
+    pub async fn persist(&self) {
+        let book = self.engine.read().await.book.clone();
+        let recent = self.recent_trades.read().await;
+        persist::persist_now(&book, &recent, &self.settlement).await;
+    }
 }
