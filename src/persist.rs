@@ -72,7 +72,6 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
             taker_user text not null,
             maker_user text not null,
             market text not null,
-            side text not null,
             ) "#,
         r#"create table if not exists settlements (
             id bigint primary key ,
@@ -210,4 +209,92 @@ pub async fn load() -> Snapshot {
         recent_trades,
         settlements,
     }
+}
+
+async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
+    ).bind("next_order_id").bind(snapshot.next_order_id as i64).execute(pool).await;
+    sqlx::query(
+        "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
+    ).bind("next_settlement_id").bind(snapshot.next_settlement_id as i64).execute(pool).await;
+
+    sqlx::query("delete from open_orders")
+        .execute(&mut *tx)
+        .await?;
+    for o in &snapshot.open_orders {
+        if !o.is_active() {
+            continue;
+        }
+
+        sqlx::query(
+            r#"
+            insert into open_orders (side,price,quantity,filled_quantity,user, status,market,timestamp) values (
+,$1
+,$2
+,$3
+,$4
+,$5
+,$6
+,$7
+,$8)"#
+        )
+            .bind(o.side.to_str())
+            .bind(o.price.unwrap_or_default() as i64)
+            .bind(o.quantity as i64)
+            .bind(o.filled_quantity as i64)
+            .bind(o.user.clone())
+            .bind(o.status.to_str())
+            .bind(o.market.clone())
+            .bind(o.timestamp.timestamp_millis())
+            .execute(&mut *tx).await?;
+    }
+
+    sqlx::query("delete from recent_trades")
+        .execute(&mut *tx)
+        .await?;
+    for t in &snapshot.recent_trades {
+        sqlx::query(
+            r#"
+            insert into recent_trades (
+                taker_order_id, maker_order_id, price, quantity, taker_side, taker_user, maker_user, market
+                ) values (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                $8,
+                $9,
+                )
+            "#,
+        )
+            .bind(t.taker_order_id.to_string())
+            .bind(t.maker_order_id.to_string())
+            .bind(t.price as i64)
+            .bind(t.quantity as i64)
+            .bind(t.side.to_str())
+            .bind(t.taker_user.clone())
+            .bind(t.maker_user.clone())
+            .bind(t.market.clone())
+            .execute(&mut *tx).await?;
+    }
+
+    sqlx::query("delete from settlements")
+        .execute(&mut *tx)
+        .await?;
+
+    for s in &snapshot.settlements {
+        let payload = serde_json::to_value(s).unwrap_or_default();
+        sqlx::query("insert into settlements (paylaod) values ($1)")
+            .bind(payload)
+            .execute(&mut *tx)
+            .await?;
+    }
+
+    tx.commit().await?;
+    Ok(())
 }

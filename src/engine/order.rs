@@ -7,6 +7,14 @@ pub enum Side {
     Bid,
     Ask,
 }
+impl Side {
+    pub fn to_str(&self) -> &str {
+        match self {
+            Side::Bid => "bid",
+            Side::Ask => "ask",
+        }
+    }
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Order {
@@ -40,6 +48,17 @@ pub enum OrderStatus {
     Filled,
     Cancelled,
     Rejected,
+}
+impl OrderStatus {
+    pub fn to_str(&self) -> &str {
+        match self {
+            Self::Open => "Open",
+            Self::PartiallyFilled => "PartiallyFilled",
+            Self::Filled => "Filled",
+            Self::Cancelled => "Cancelled",
+            Self::Rejected => "Rejected",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
