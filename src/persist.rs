@@ -218,10 +218,10 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
     let mut tx = pool.begin().await?;
     sqlx::query(
         "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
-    ).bind("next_order_id").bind(snapshot.next_order_id as i64).execute(pool).await;
+    ).bind("next_order_id").bind(snapshot.next_order_id as i64).execute(pool).await.expect("insert next_order_id error");
     sqlx::query(
         "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
-    ).bind("next_settlement_id").bind(snapshot.next_settlement_id as i64).execute(pool).await;
+    ).bind("next_settlement_id").bind(snapshot.next_settlement_id as i64).execute(pool).await.expect("insert next_settlement_id error");
 
     sqlx::query("delete from open_orders")
         .execute(&mut *tx)
@@ -327,5 +327,9 @@ pub async fn persist_now(
         return;
     };
 
-    let snap = capture();
+    let snap = capture(book, recent, settlement).await;
+
+    if let Err(e) = save_snapshot(pool, &snap).await {
+        eprintln!("save snapshot error: {e}");
+    }
 }
