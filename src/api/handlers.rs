@@ -98,9 +98,8 @@ pub async fn place_order(
             state.record_trades(&trades).await;
             state.broadcast_orderbook().await;
 
-            // let _ = state.tx.send(ServerEvent::OrderUpdate(order.clone()));
-            // let snapshot = engine.get_snapshot(20);
-            // let _ = state.tx.send(ServerEvent::Snapshot(snapshot));
+            state.persist().await;
+
             Ok(Json(serde_json::json!({
                 "order_id": order_id,
                 "remaining": remaining,
@@ -124,6 +123,7 @@ pub async fn cancel_order(
             let event = ServerEvent::OrderCancelled { order_id: order.id };
             state.broadcast(event);
             state.broadcast_orderbook().await;
+            state.persist().await;
             Ok(Json(order))
         }
         Err(e) => {
@@ -241,7 +241,7 @@ pub async fn get_settlement(
         .ok_or(ApiError::NotFound(format!("settlement {id} not found")))
 }
 
-struct ConfirmSettlementRequest {
+pub struct ConfirmSettlementRequest {
     signature: String,
     success: bool,
     error: Option<String>,
@@ -273,10 +273,6 @@ pub async fn confirm_settlement(
     });
 
     Ok(Json(job))
-}
-
-fn default_false() -> bool {
-    false
 }
 
 #[derive(Deserialize)]
