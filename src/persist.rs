@@ -55,7 +55,7 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
     for stmt in [
         r#"create table if not exists engine_meta (key text not null primary key, value bigint not null)"#,
         r#"create table if not exists open_orders (
-            id bigint primary key,
+            id bigserial primary key,
             side text not null,
             price bigint not null,
             quantity bigint not null,
@@ -145,7 +145,7 @@ pub async fn load() -> Snapshot {
             price: Some(r.get::<i64, _>("price") as u64),
             quantity: r.get::<i64, _>("quantity") as u64,
             filled_quantity: r.get::<i64, _>("filled_quantity") as u64,
-            user: r.get("user"),
+            user: r.get("user_wallet"),
             timestamp: chrono::DateTime::from_timestamp_millis(r.get::<i64, _>("timestamp"))
                 .unwrap_or_default(),
             status,
@@ -216,12 +216,16 @@ pub async fn load() -> Snapshot {
 
 async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
+    let next_order_id = snapshot.next_order_id as i64;
+    let next_settlement_id = snapshot.next_settlement_id as i64;
+    // let next_order_id = 1;
+    // let next_settlement_id = 1;
     sqlx::query(
-        "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
-    ).bind("next_order_id").bind(snapshot.next_order_id as i64).execute(pool).await.expect("insert next_order_id error");
+        "insert into engine_meta (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
+    ).bind("next_order_id").bind(next_order_id).execute(pool).await.expect("insert next_order_id error");
     sqlx::query(
-        "insert into engine_meat (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
-    ).bind("next_settlement_id").bind(snapshot.next_settlement_id as i64).execute(pool).await.expect("insert next_settlement_id error");
+        "insert into engine_meta (key, value) values ($1, $2) on conflict (key) do update set value=excluded.value",
+    ).bind("next_settlement_id").bind(next_settlement_id).execute(pool).await.expect("insert next_settlement_id error");
 
     sqlx::query("delete from open_orders")
         .execute(&mut *tx)
@@ -232,17 +236,7 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
         }
 
         sqlx::query(
-            r#"
-            insert into open_orders (side,price,quantity,filled_quantity,user, status,market,timestamp) values (
-,$1
-,$2
-,$3
-,$4
-,$5
-,$6
-,$7
-,$8)"#
-        )
+            r#"insert into open_orders (side,price,quantity,filled_quantity,user_wallet, status,market,timestamp) values ($1 ,$2 ,$3 ,$4 ,$5 ,$6 ,$7 ,$8)"#)
             .bind(o.side.to_str())
             .bind(o.price.unwrap_or_default() as i64)
             .bind(o.quantity as i64)
