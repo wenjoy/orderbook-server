@@ -77,7 +77,7 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
             market text not null
             ) "#,
         r#"create table if not exists settlements (
-            id bigint primary key ,
+            id bigserial primary key ,
             payload jsonb not null
             ) "#,
     ] {
@@ -264,8 +264,7 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
                 $5,
                 $6,
                 $7,
-                $8,
-                $9,
+                $8
                 )
             "#,
         )
@@ -286,7 +285,7 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
 
     for s in &snapshot.settlements {
         let payload = serde_json::to_value(s).unwrap_or_default();
-        sqlx::query("insert into settlements (paylaod) values ($1)")
+        sqlx::query("insert into settlements (payload) values ($1)")
             .bind(payload)
             .execute(&mut *tx)
             .await?;
