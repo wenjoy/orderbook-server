@@ -65,7 +65,9 @@ impl MatchingEngine {
 
     fn match_ask(&mut self, taker: &mut Order, trades: &mut Vec<Trade>) {
         while taker.remaining() > 0 {
+            //TODO: handle maker and taker is same problem
             let Some(best_bid_price) = self.book.best_bid() else {
+                println!("no best bid price");
                 break;
             };
             if let Some(limit_price) = taker.price
@@ -81,6 +83,10 @@ impl MatchingEngine {
                 .expect("not a valid bid price");
 
             for maker in price_level.orders.iter_mut() {
+                // if maker.user == taker.user {
+                //     continue;
+                // }
+
                 let traded = maker.remaining().min(taker.remaining());
 
                 if traded == 0 {
@@ -147,6 +153,11 @@ impl MatchingEngine {
                 .expect("not a valid price");
 
             for maker in price_level.orders.iter_mut() {
+                //TODO: this not enough
+                // if maker.user == taker.user {
+                //     continue;
+                // }
+
                 let traded = maker.remaining().min(taker.remaining());
 
                 trades.push(Trade {
