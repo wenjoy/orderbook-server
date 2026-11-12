@@ -107,12 +107,7 @@ pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String>
     })
 }
 
-struct AccountMetaJson {
-    pub pubkey: String,
-    pub is_signer: bool,
-    pub is_writable: bool,
-}
-//TODO: may not necessary
+//TODO: remove this later, not useful anymore
 pub struct BuiltInstruction {
     // pub name: String,
     // pub program_id: String,
@@ -139,7 +134,6 @@ pub fn build_initialize_market(
     let quote_mint = parse_pubkey(quote_mint, "quote_mint")?;
 
     let (market, _) = derive_market(&program_id, &base_mint, &quote_mint);
-    println!("market pda: {}", market);
 
     let ix = Instruction {
         program_id,

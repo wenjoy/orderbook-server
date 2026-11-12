@@ -1,6 +1,6 @@
 use crate::{
     api::settlement::SettlementService,
-    engine::{MatchingEngine, book::OrderBook, order::Trade},
+    engine::{MatchingEngine, order::Trade},
     event::ServerEvent,
     persist,
 };
@@ -21,23 +21,8 @@ pub struct AppState {
     pub pool: PgPool,
 }
 impl AppState {
-    pub async fn new() -> Self {
-        dotenv::dotenv().expect("load env config failed");
-        let database_url = env::var("DATABASE_URL").expect("databse no config");
-        let (tx, _) = broadcast::channel(1024);
-        Self {
-            engine: Arc::new(RwLock::new(MatchingEngine::new())),
-            tx,
-            recent_trades: Arc::new(RwLock::new(VecDeque::with_capacity(MAX_RECENT_TRADES))),
-            settlement: SettlementService::from_env(),
-            pool: sqlx::postgres::PgPool::connect(&database_url)
-                .await
-                .expect("connect to database error"),
-        }
-    }
-
     pub fn broadcast(&self, event: ServerEvent) {
-        self.tx.send(event);
+        let _ = self.tx.send(event);
     }
 
     pub async fn broadcast_orderbook(&self) {
@@ -79,8 +64,10 @@ impl AppState {
         dotenv::dotenv().expect("load env config failed");
         let database_url = env::var("DATABASE_URL").expect("databse no config");
         let snap = persist::load().await;
+
         let mut engine = MatchingEngine::new();
         engine.restore_order(&snap);
+
         let mut recent = VecDeque::with_capacity(MAX_RECENT_TRADES);
         for t in snap.recent_trades.iter().take(MAX_RECENT_TRADES) {
             recent.push_back(t.clone());
