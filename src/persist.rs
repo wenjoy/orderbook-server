@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Snapshot {
     pub next_order_id: u64,
     pub next_settlement_id: u64,
@@ -74,6 +74,7 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::Error> {
             taker_side text not null,
             taker_user text not null,
             maker_user text not null,
+            timestamp bigint null,
             market text not null
             ) "#,
         r#"create table if not exists settlements (
@@ -105,6 +106,7 @@ fn parse_status(s: &str) -> Option<OrderStatus> {
 }
 pub async fn load() -> Snapshot {
     let Some(pool) = pool().await else {
+        eprintln!("failed to connect to pool");
         return Snapshot {
             next_order_id: 1,
             next_settlement_id: 1,
@@ -121,11 +123,14 @@ pub async fn load() -> Snapshot {
     let next_settlement_id = row[1].get::<i64, _>("value") as u64;
 
     let order_rows = sqlx::query(
-        "select id,side,price,quantity,remaining,user_id,ts_ns from open_orders order by id",
+        "select side,status,price,quantity,filled_quantity,user_wallet,timestamp,market from open_orders order by id",
     )
     .fetch_all(pool)
     .await
-    .unwrap_or_default();
+    .unwrap_or_else(|e| {
+        eprintln!("fetch orders error: {}", e);
+        vec![]
+    });
 
     let mut open_orders = Vec::with_capacity(order_rows.len());
     for r in order_rows {
@@ -155,18 +160,21 @@ pub async fn load() -> Snapshot {
 
     let trade_rows = sqlx::query(
         r#"
-        select taker_order_id, maker_order_id, price, quantity, taker_side, taker_user, maker_user
+        select taker_order_id, maker_order_id, price, quantity, taker_side, taker_user, maker_user,market,timestamp 
         from recent_trades
-        order by sed DESC
+        order by seq DESC
         limit 500
         "#,
     )
     .fetch_all(pool)
     .await
-    .unwrap_or_default();
+    .unwrap_or_else(|e| {
+        eprintln!("fetch trades error {}", e);
+        vec![]
+    });
     let mut recent_trades = Vec::with_capacity(trade_rows.len());
     for r in trade_rows {
-        let side_s: String = r.get("side");
+        let side_s: String = r.get("taker_side");
 
         let Some(side) = parse_side(&side_s) else {
             continue;
@@ -180,21 +188,26 @@ pub async fn load() -> Snapshot {
             maker_order_id: Uuid::parse_str(r.get("maker_order_id")).unwrap_or_default(),
             taker_order_id: Uuid::parse_str(r.get("taker_order_id")).unwrap_or_default(),
             side,
-            timestamp: chrono::DateTime::from_timestamp_millis(r.get::<i64, _>("timestamp"))
-                .unwrap_or_default(),
+            timestamp: chrono::DateTime::from_timestamp_millis(
+                r.try_get::<i64, _>("timestamp").unwrap_or_default(),
+            )
+            .unwrap_or_default(),
             quantity: r.get::<i64, _>("quantity") as u64,
             price: r.get::<i64, _>("price") as u64,
         });
     }
 
-    let settlement_rows = sqlx::query("select id, paylaod from settlements")
+    let settlement_rows = sqlx::query("select id, payload from settlements")
         .fetch_all(pool)
         .await
-        .unwrap_or_default();
+        .unwrap_or_else(|e| {
+            eprintln!("fetch settlement error {}", e);
+            vec![]
+        });
     let mut settlements = Vec::with_capacity(settlement_rows.len());
 
     for r in settlement_rows {
-        let payload = r.get("paylaod");
+        let payload = r.get("payload");
         match serde_json::from_value::<SettlementJob>(payload) {
             Ok(j) => {
                 settlements.push(j);
@@ -255,7 +268,7 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
         sqlx::query(
             r#"
             insert into recent_trades (
-                taker_order_id, maker_order_id, price, quantity, taker_side, taker_user, maker_user, market
+                taker_order_id, maker_order_id, price, quantity, taker_side, taker_user, maker_user, market, timestamp
                 ) values (
                 $1,
                 $2,
@@ -276,6 +289,7 @@ async fn save_snapshot(pool: &PgPool, snapshot: &Snapshot) -> Result<(), sqlx::E
             .bind(t.taker_user.clone())
             .bind(t.maker_user.clone())
             .bind(t.market.clone())
+            .bind(t.timestamp.timestamp_millis())
             .execute(&mut *tx).await?;
     }
 

@@ -7,7 +7,7 @@ use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
-    let state = AppState::new().await;
+    let state = AppState::load_persisted().await;
     let app = Router::<AppState>::new()
         .route(
             "/orders",
