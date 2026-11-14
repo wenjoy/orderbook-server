@@ -21,13 +21,14 @@ async fn main() {
         .route("/ws", get(handlers::ws_handler))
         .route(
             "/onchain/request_token_airdrop",
-            get(handlers::request_token_airdrop),
+            post(handlers::request_token_airdrop),
+        )
+        //NOTE: this is used for prepare script
+        .route(
+            "/onchain/initialize-market",
+            post(handlers::initialize_market),
         )
         // Deprecated
-        // .route(
-        //     "/onchain/initialize-market",
-        //     post(handlers::initialize_market),
-        // )
         // .route(
         //     "/onchain/initialize-vault",
         //     post(handlers::initialize_vault),

@@ -11,7 +11,7 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{pubkey::Pubkey, signer::Signer};
 use uuid::Uuid;
 
 use crate::{
@@ -377,18 +377,17 @@ pub struct TokenAirdropRequest {
 }
 pub async fn request_token_airdrop(Json(req): Json<TokenAirdropRequest>) -> ApiResult<()> {
     let token_pid = &spl_token_interface::id();
-    let source = load_settle_keypair().map_err(|_| ApiError::Internale("unexpected".into()))?;
-    let source_pub = Pubkey::from_str(&source.to_base58_string())
-        .map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let source = load_settle_keypair().map_err(|_| ApiError::Internale("unexpected 1".into()))?;
+    let source_pub = source.pubkey();
     let mint_pub =
-        Pubkey::from_str(&req.mint).map_err(|_| ApiError::Internale("unexpected".into()))?;
+        Pubkey::from_str(&req.mint).map_err(|_| ApiError::Internale("unexpected 3".into()))?;
     let source_ata = spl_associated_token_account_interface::address::get_associated_token_address_with_program_id(&source_pub, &mint_pub, token_pid);
 
-    let dest_pub =
-        Pubkey::from_str(&req.destination).map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let dest_pub = Pubkey::from_str(&req.destination)
+        .map_err(|_| ApiError::Internale("unexpected 4".into()))?;
     let dest_ata = spl_associated_token_account_interface::address::get_associated_token_address_with_program_id(&dest_pub, &mint_pub, token_pid);
 
-    let decimal = 6;
+    let decimal = 9;
     transfer_token(
         &source_ata,
         &source_pub,

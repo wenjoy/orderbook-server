@@ -172,7 +172,7 @@ pub fn build_initialize_market(
             AccountMeta::new_readonly(system_program::id(), false),
         ],
     };
-    //TODO: implement if necessary
+    //TODO: get rid of this
     let built = BuiltInstruction {};
     Ok((ix, built))
 }
