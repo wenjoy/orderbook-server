@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use axum::{
     Json,
     extract::{
@@ -9,6 +11,7 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use solana_sdk::pubkey::Pubkey;
 use uuid::Uuid;
 
 use crate::{
@@ -16,7 +19,10 @@ use crate::{
         settlement::{SettlementJob, SettlementStatus},
         state::AppState,
     },
-    chain::{build_initialize_market, build_initialize_vault, submit_instruction},
+    chain::{
+        build_initialize_market, build_initialize_vault, load_settle_keypair, submit_instruction,
+        transfer_token,
+    },
     engine::order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade},
     error::{ApiError, ApiResult},
     event::ServerEvent,
@@ -361,4 +367,39 @@ pub async fn get_markets(State(state): State<AppState>) -> ApiResult<Json<Vec<Ge
         Ok(data) => Ok(Json(data)),
         Err(_) => Err(ApiError::NotFound("no markets exists".into())),
     }
+}
+
+#[derive(Deserialize)]
+pub struct TokenAirdropRequest {
+    destination: String,
+    amount: u64,
+    mint: String,
+}
+pub async fn request_token_airdrop(Json(req): Json<TokenAirdropRequest>) -> ApiResult<()> {
+    let token_pid = &spl_token_interface::id();
+    let source = load_settle_keypair().map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let source_pub = Pubkey::from_str(&source.to_base58_string())
+        .map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let mint_pub =
+        Pubkey::from_str(&req.mint).map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let source_ata = spl_associated_token_account_interface::address::get_associated_token_address_with_program_id(&source_pub, &mint_pub, token_pid);
+
+    let dest_pub =
+        Pubkey::from_str(&req.destination).map_err(|_| ApiError::Internale("unexpected".into()))?;
+    let dest_ata = spl_associated_token_account_interface::address::get_associated_token_address_with_program_id(&dest_pub, &mint_pub, token_pid);
+
+    let decimal = 6;
+    transfer_token(
+        &source_ata,
+        &source_pub,
+        &dest_ata,
+        req.amount,
+        &mint_pub,
+        decimal,
+    )
+    .map_err(|e| {
+        eprintln!("transfer error {e}");
+        ApiError::BadRequest("not a valid transfer".into())
+    })?;
+    Ok(())
 }

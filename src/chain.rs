@@ -1,5 +1,6 @@
-use std::{env, fs, str::FromStr};
+use std::{env, error::Error, fs, str::FromStr};
 
+use solana_address::Address;
 use solana_client::rpc_client::RpcClient;
 use solana_program::example_mocks::solana_sdk::system_program;
 use solana_sdk::{
@@ -9,6 +10,7 @@ use solana_sdk::{
     signer::Signer,
     transaction::Transaction,
 };
+use spl_token_interface::instruction::transfer_checked;
 
 use crate::api::settlement::pack_settle_trade;
 
@@ -105,6 +107,30 @@ pub fn submit_settle_trade(params: SubmitParams) -> Result<SubmitResult, String>
         maker_vault: maker_vault.to_string(),
         taker_vault: taker_vault.to_string(),
     })
+}
+
+pub fn transfer_token(
+    source: &Address,
+    authority: &Address,
+    destination: &Address,
+    amount: u64,
+    mint: &Address,
+    decimal: u8,
+) -> Result<String, Box<dyn Error>> {
+    //It's okay for demo because this account own all token generated in demo
+    let ix = transfer_checked(
+        &spl_token_interface::id(),
+        source,
+        mint,
+        destination,
+        authority,
+        &[],
+        amount,
+        decimal,
+    )?;
+    let rpc_url = env::var("SOLANA_RPC_URL")?;
+    let sig = submit_instruction(&rpc_url, ix)?;
+    Ok(sig)
 }
 
 //TODO: remove this later, not useful anymore

@@ -20,9 +20,14 @@ async fn main() {
         .route("/markets", get(handlers::get_markets))
         .route("/ws", get(handlers::ws_handler))
         .route(
-            "/onchain/initialize-market",
-            post(handlers::initialize_market),
+            "/onchain/request_token_airdrop",
+            get(handlers::request_token_airdrop),
         )
+        // Deprecated
+        // .route(
+        //     "/onchain/initialize-market",
+        //     post(handlers::initialize_market),
+        // )
         // .route(
         //     "/onchain/initialize-vault",
         //     post(handlers::initialize_vault),

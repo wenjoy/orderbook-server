@@ -19,4 +19,7 @@ solana-client= "4.3"
 solana-program= "4.1"
 dotenv = "0.15.0"
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres"] }
+spl-token-interface = "3.0.0"
+spl-associated-token-account-interface = "2.0.0"
+solana-address = "2.9.0"
 
