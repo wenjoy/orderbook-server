@@ -129,6 +129,7 @@ pub fn transfer_token(
         decimal,
     )?;
     let rpc_url = env::var("SOLANA_RPC_URL")?;
+    println!("{rpc_url}");
     let sig = submit_instruction(&rpc_url, ix)?;
     Ok(sig)
 }

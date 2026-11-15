@@ -69,10 +69,11 @@ pub struct SettlementConfig {
 impl SettlementConfig {
     fn from_env() -> Self {
         let mode = SettlementMode::from_env();
+        let rpc_url = env::var("SOLANA_RPC_URL").unwrap();
         Self {
             mode,
             program_id: env::var("SETTLEMENT_PROGRAM_ID").unwrap(),
-            rpc_url: env::var("SOLANA_RPC_URL").unwrap(),
+            rpc_url,
         }
     }
 }

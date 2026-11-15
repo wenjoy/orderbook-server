@@ -7,6 +7,7 @@ use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().expect("laod env file failed");
     let state = AppState::load_persisted().await;
     let app = Router::<AppState>::new()
         .route(

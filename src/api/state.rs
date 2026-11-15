@@ -61,7 +61,6 @@ impl AppState {
     }
 
     pub async fn load_persisted() -> Self {
-        dotenv::dotenv().expect("load env config failed");
         let database_url = env::var("DATABASE_URL").expect("databse no config");
         let snap = persist::load().await;
 
