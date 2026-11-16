@@ -56,12 +56,6 @@ Components:
 | Settlement | `src/api/settlement.rs`, `src/chain.rs` | Job lifecycle, 18-byte instruction packing, RPC submission |
 | Persistence | `src/persist.rs` | Startup restore and full-snapshot writes on every order/cancel |
 
-## Flow
-
-1. `POST /orders` takes a write lock on `MatchingEngine` and matches against the best opposite level, maker price wins.
-2. Fills go to `recent_trades`, are queued as `SettlementJob`s, and are broadcast as WebSocket events.
-3. The engine then persists a full snapshot to PostgreSQL. Unfilled limit orders rest in the book; `price: null` is a market order.
-
 ## API
 
 | Method | Path | Purpose |
@@ -77,10 +71,6 @@ Components:
 | `POST` | `/onchain/request_token_airdrop` | Devnet token airdrop |
 | `POST` | `/onchain/initialize-market` | Submit market init instruction |
 
-## Settlement modes
-
-`SETTLEMENT_MODE` selects the behavior: `dry_run` (default) marks jobs `Simulated` without touching the chain, `queue` only logs, and `hot_wallet` signs with `SETTLEMENT_KEYPAIR` and submits synchronously.
-
 ## Quick start
 
 ```bash
@@ -90,11 +80,3 @@ psql "postgres://orderbook:123@127.0.0.1:6432/orderbook_markets" -f init.sql
 cargo run                  # http://127.0.0.1:8080
 cargo test                 # matching + throughput tests
 ```
-
-## Known limitations
-
-- One global book: orders with different `market` values match each other.
-- A partially filled market order panics (`book.rs:65`); `test_market_order_insufficient_liquidity` fails.
-- Self-trade prevention is commented out; `order_index` is not cleaned for filled makers.
-- Full snapshot rewrite on every order; settlement RPC calls block the async handler.
-- `get_settlement` and `confirm_settlement` exist but are not routed.
