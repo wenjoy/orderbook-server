@@ -140,6 +140,27 @@ fn test_market_order_insufficient_liquidity() {
     assert_eq!(trades[0].quantity, 5);
     assert_eq!(buy_order.status, OrderStatus::PartiallyFilled);
     assert_eq!(buy_order.filled_quantity, 5);
+
+    // The unfilled remainder must not rest on the book.
+    let snap = engine.get_snapshot(10);
+    assert!(snap.bids.is_empty());
+    assert!(snap.asks.is_empty());
+}
+
+#[test]
+fn test_market_order_without_liquidity_does_not_rest() {
+    let mut engine = MatchingEngine::new();
+
+    let buy = make_market_order(Side::Bid, 10);
+    let (buy_order, trades) = engine.place_order(buy).unwrap();
+
+    assert!(trades.is_empty());
+    assert_eq!(buy_order.filled_quantity, 0);
+    assert_eq!(buy_order.status, OrderStatus::Cancelled);
+
+    let snap = engine.get_snapshot(10);
+    assert!(snap.bids.is_empty());
+    assert!(snap.asks.is_empty());
 }
 #[test]
 fn test_price_time_priority() {

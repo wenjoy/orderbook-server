@@ -5,7 +5,7 @@ use book::OrderBook;
 use order::{Order, OrderBookSnapshot, OrderStatus, Side, Trade};
 use uuid::Uuid;
 
-use crate::{engine::order::OrderStatus::Open, persist::Snapshot};
+use crate::persist::Snapshot;
 
 #[derive(Debug)]
 pub enum EngineError {
@@ -42,17 +42,23 @@ impl MatchingEngine {
             Side::Bid => self.match_bid(&mut order, &mut new_trades),
         }
 
-        if order.remaining() > 0 {
+        if order.remaining() == 0 {
+            order.status = OrderStatus::Filled;
+        } else if order.price.is_some() {
+            // Limit orders rest on the book until filled or cancelled.
             order.status = if order.filled_quantity > 0 {
                 OrderStatus::PartiallyFilled
             } else {
                 OrderStatus::Open
             };
             self.book.add_order_to_book(&order);
-        } else if order.remaining() == 0 {
-            order.status = OrderStatus::Filled;
         } else {
-            order.status = OrderStatus::PartiallyFilled;
+            // Market orders cannot rest: the unfilled remainder is dropped (IOC).
+            order.status = if order.filled_quantity > 0 {
+                OrderStatus::PartiallyFilled
+            } else {
+                OrderStatus::Cancelled
+            };
         }
 
         self.trades.extend(new_trades.clone());
