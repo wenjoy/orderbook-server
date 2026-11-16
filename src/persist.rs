@@ -119,8 +119,14 @@ pub async fn load() -> Snapshot {
         .await
         .unwrap_or_default();
 
-    let next_order_id = row[0].get::<i64, _>("value") as u64;
-    let next_settlement_id = row[1].get::<i64, _>("value") as u64;
+    let (next_order_id, next_settlement_id) = if !row.is_empty() {
+        (
+            row[0].get::<i64, _>("value") as u64,
+            row[1].get::<i64, _>("value") as u64,
+        )
+    } else {
+        (1, 1)
+    };
 
     let order_rows = sqlx::query(
         "select side,status,price,quantity,filled_quantity,user_wallet,timestamp,market from open_orders order by id",
