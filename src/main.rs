@@ -34,6 +34,7 @@ async fn main() {
         //     "/onchain/initialize-vault",
         //     post(handlers::initialize_vault),
         // )
+        .route("/rpc", post(handlers::rpc_proxy))
         .layer(CorsLayer::permissive())
         .with_state(state);
 

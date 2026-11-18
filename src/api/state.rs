@@ -4,6 +4,7 @@ use crate::{
     event::ServerEvent,
     persist,
 };
+use reqwest::Client;
 use sqlx::PgPool;
 use std::{collections::VecDeque, env, sync::Arc};
 use tokio::sync::{RwLock, broadcast};
@@ -19,6 +20,7 @@ pub struct AppState {
     pub tx: broadcast::Sender<ServerEvent>,
     pub settlement: SettlementService,
     pub pool: PgPool,
+    pub rpc_proxy: ProxyConfig,
 }
 impl AppState {
     pub fn broadcast(&self, event: ServerEvent) {
@@ -76,7 +78,10 @@ impl AppState {
         settlement.load_snapshot(snap.settlements).await;
         let (tx, _) = broadcast::channel(1024);
 
+        let rpc_proxy = ProxyConfig::from_env();
+
         Self {
+            rpc_proxy,
             tx,
             engine: Arc::new(RwLock::new(engine)),
             recent_trades: Arc::new(RwLock::new(recent)),
@@ -91,5 +96,22 @@ impl AppState {
         let book = self.engine.read().await.book.clone();
         let recent = self.recent_trades.read().await;
         persist::persist_now(&book, &recent, &self.settlement).await;
+    }
+}
+
+#[derive(Clone)]
+pub struct ProxyConfig {
+    pub client: Client,
+    pub rpc_url: String,
+}
+
+impl ProxyConfig {
+    pub fn from_env() -> Self {
+        let rpc_url = env::var("SOLANA_RPC_URL").expect("solana rpc url must be set in .env");
+
+        Self {
+            client: Client::new(),
+            rpc_url,
+        }
     }
 }

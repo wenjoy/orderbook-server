@@ -129,7 +129,6 @@ pub fn transfer_token(
         decimal,
     )?;
     let rpc_url = env::var("SOLANA_RPC_URL")?;
-    println!("{rpc_url}");
     let sig = submit_instruction(&rpc_url, ix)?;
     Ok(sig)
 }
@@ -201,7 +200,6 @@ pub fn build_initialize_vault(
     Ok(ix)
 }
 pub fn submit_instruction(rpc_url: &str, ix: Instruction) -> Result<String, String> {
-    //TODO: shouldn't load keypair
     let keypair = load_settle_keypair()?;
     let payer = keypair.pubkey();
     let client = RpcClient::new(rpc_url);

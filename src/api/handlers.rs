@@ -2,14 +2,17 @@ use std::str::FromStr;
 
 use axum::{
     Json,
+    body::Bytes,
     extract::{
         Path, Query, State, WebSocketUpgrade,
         ws::{Message, WebSocket},
     },
     http::StatusCode,
     response::IntoResponse,
+    response::Response,
 };
 use futures_util::{SinkExt, StreamExt};
+use reqwest::header;
 use serde::{Deserialize, Serialize};
 use solana_sdk::{pubkey::Pubkey, signer::Signer};
 use uuid::Uuid;
@@ -17,7 +20,7 @@ use uuid::Uuid;
 use crate::{
     api::{
         settlement::{SettlementJob, SettlementStatus},
-        state::AppState,
+        state::{AppState, ProxyConfig},
     },
     chain::{
         build_initialize_market, build_initialize_vault, load_settle_keypair, submit_instruction,
@@ -401,4 +404,27 @@ pub async fn request_token_airdrop(Json(req): Json<TokenAirdropRequest>) -> ApiR
         ApiError::BadRequest("not a valid transfer".into())
     })?;
     Ok(())
+}
+
+#[axum::debug_handler]
+pub async fn rpc_proxy(State(state): State<AppState>, body: Bytes) -> ApiResult<Response> {
+    let ProxyConfig { client, rpc_url } = state.rpc_proxy;
+    let upstream_res = client
+        .post(rpc_url)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| {
+            eprintln!("post to helius error {e}");
+            ApiError::BadRequest("bad request".into())
+        })?;
+
+    let status = upstream_res.status();
+    let body = upstream_res.bytes().await.map_err(|e| {
+        eprintln!("post to helius got error {e}");
+        ApiError::BadRequest("bad request".into())
+    })?;
+
+    Ok((status, [(header::CONTENT_TYPE, "application/json")], body).into_response())
 }
